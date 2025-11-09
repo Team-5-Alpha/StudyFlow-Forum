@@ -6,7 +6,7 @@ plugins {
 
 group = 'telerik.project'
 version = '0.0.1-SNAPSHOT'
-description = 'forum'
+description = 'studyflow'
 
 java {
     toolchain {
