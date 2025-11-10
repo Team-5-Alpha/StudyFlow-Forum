@@ -12,12 +12,12 @@ import telerik.project.repositories.contracts.UserRepository;
 import java.util.List;
 
 @Repository
-public class UserRepositoryImp implements UserRepository {
+public class UserRepositoryImpl implements UserRepository {
 
     private final SessionFactory sessionFactory;
 
     @Autowired
-    public UserRepositoryImp(SessionFactory sessionFactory) {
+    public UserRepositoryImpl(SessionFactory sessionFactory) {
         this.sessionFactory = sessionFactory;
     }
 
