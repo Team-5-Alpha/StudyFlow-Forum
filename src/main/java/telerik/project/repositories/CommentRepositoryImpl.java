@@ -1,4 +1,4 @@
 package telerik.project.repositories;
 
-public class PostRepositoryImp {
+public class CommentRepositoryImpl {
 }
