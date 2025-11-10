@@ -1,4 +1,4 @@
 package telerik.project.repositories;
 
-public interface PostRepository {
+public class UserRepositoryImp {
 }
