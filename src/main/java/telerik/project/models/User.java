@@ -14,8 +14,8 @@ import java.util.Set;
 
 @Setter
 @Getter
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class User {
 
     @Id

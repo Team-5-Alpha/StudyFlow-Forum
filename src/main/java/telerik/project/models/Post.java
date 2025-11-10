@@ -10,12 +10,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
+@Entity
+@Table(name = "posts")
+
 @Setter
 @Getter
 @NoArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Entity
-@Table(name = "posts")
 public class Post {
 
     @Id
