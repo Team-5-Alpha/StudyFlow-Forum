@@ -1,4 +1,80 @@
 package telerik.project.repositories;
 
-public class CommentRepositoryImpl {
+import lombok.AllArgsConstructor;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.query.Query;
+import org.springframework.stereotype.Repository;
+import telerik.project.exceptions.EntityNotFoundException;
+import telerik.project.models.Comment;
+import telerik.project.repositories.contracts.CommentRepository;
+
+import java.util.List;
+
+@Repository
+@AllArgsConstructor
+public class CommentRepositoryImpl implements CommentRepository {
+
+    private final SessionFactory sessionFactory;
+
+    @Override
+    public Comment getById(Long id) {
+        try(Session session = sessionFactory.openSession()) {
+            Comment comment = session.get(Comment.class, id);
+            if (comment == null) {
+                throw new EntityNotFoundException("Comment");
+            }
+            return comment;
+        }
+    }
+
+    @Override
+    public List<Comment> getAll() {
+        try(Session session = sessionFactory.openSession()) {
+            Query<Comment> query = session.createQuery("from Comment c where c.isDeleted = false", Comment.class);
+            return query.list();
+        }
+    }
+
+    @Override
+    public long countByPostId(Long postId) {
+        try(Session session = sessionFactory.openSession()) {
+            Query<Long> query = session.createQuery(
+                    "select count(c) from Comment c where c.post.id = :postId", Long.class);
+            query.setParameter("postId", postId);
+            Long result = query.uniqueResult();
+            return result != null ? result : 0L;
+        }
+    }
+
+    @Override
+    public void create(Comment comment) {
+        try(Session session = sessionFactory.openSession()) {
+            session.beginTransaction();
+            session.persist(comment);
+            session.getTransaction().commit();
+        }
+    }
+
+    @Override
+    public void update(Comment comment) {
+        try(Session session = sessionFactory.openSession()) {
+            session.beginTransaction();
+            session.merge(comment);
+            session.getTransaction().commit();
+        }
+    }
+
+    @Override
+    public void delete(Long id) {
+        try(Session session = sessionFactory.openSession()) {
+            session.beginTransaction();
+            Comment comment = session.get(Comment.class, id);
+            if (comment == null) {
+                throw new EntityNotFoundException("Comment");
+            }
+            session.remove(comment);
+            session.getTransaction().commit();
+        }
+    }
 }
