@@ -1,4 +1,4 @@
 package telerik.project.repositories;
 
-public class TagRepositoryImpl {
+public interface CommentRepository {
 }
