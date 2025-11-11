@@ -32,7 +32,7 @@ public class Post {
     private String content;
 
     @Column(name = "is_deleted")
-    private Boolean isDeleted;
+    private Boolean isDeleted = false;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
