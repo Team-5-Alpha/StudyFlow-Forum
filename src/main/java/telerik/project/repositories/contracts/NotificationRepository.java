@@ -5,11 +5,10 @@ import telerik.project.models.Notification;
 import java.util.List;
 
 public interface NotificationRepository {
-    Notification getById(Long id);
 
     List<Notification> getAll();
 
-//  List<Notification> getByFilter(NotificationFilter filter);
+    Notification getById(Long id);
 
     void create(Notification notification);
 

@@ -22,17 +22,6 @@ public class PostRepositoryImpl implements PostRepository {
     }
 
     @Override
-    public Post getById(Long id) {
-        try(Session session = sessionFactory.openSession()) {
-            Post post = session.get(Post.class, id);
-            if (post == null) {
-                throw new EntityNotFoundException("Post");
-            }
-            return post;
-        }
-    }
-
-    @Override
     public List<Post> getAll() {
         try(Session session = sessionFactory.openSession()) {
             Query<Post> query = session.createQuery("from Post p where p.isDeleted = false", Post.class);
@@ -41,12 +30,22 @@ public class PostRepositoryImpl implements PostRepository {
     }
 
     @Override
+    public Post getById(Long id) {
+        try(Session session = sessionFactory.openSession()) {
+            return session.byId(Post.class)
+                    .loadOptional(id)
+                    .orElseThrow(() -> new EntityNotFoundException("Post", id));
+        }
+    }
+
+    @Override
     public long countByAuthorId(Long authorId) {
         try(Session session = sessionFactory.openSession()) {
-           Query<Long> query = session.createQuery(
-                   "select count(p) from Post p where p.author.id = :authorId", Long.class);
-           query.setParameter("authorId", authorId);
-           return query.uniqueResult();
+           Long result = session.createQuery(
+                   "select count(p) from Post p where p.author.id = :authorId", Long.class)
+                   .setParameter("authorId", authorId)
+                   .uniqueResult();
+           return result != null ? result : 0L;
         }
     }
 
@@ -70,22 +69,11 @@ public class PostRepositoryImpl implements PostRepository {
 
     @Override
     public void delete(Long id) {
+        Post postToDelete = getById(id);
         try(Session session = sessionFactory.openSession()) {
             session.beginTransaction();
-            Post post = session.get(Post.class, id);
-            if (post == null) {
-                throw new EntityNotFoundException("Post");
-            }
-            session.remove(post);
+            session.remove(postToDelete);
             session.getTransaction().commit();
-        }
-    }
-
-    private Post getSingleResultByField(String fieldName, String value) {
-        try(Session session = sessionFactory.openSession()) {
-            Query<Post> query = session.createQuery("from Post where " + fieldName + " = :value", Post.class);
-            query.setParameter("value", value);
-            return query.uniqueResultOptional().orElseThrow(() -> new EntityNotFoundException(fieldName));
         }
     }
 }

@@ -22,29 +22,29 @@ public class TagRepositoryImpl implements TagRepository {
     }
 
     @Override
+    public List<Tag> getAll() {
+        try(Session session = sessionFactory.openSession()) {
+            Query<Tag> query = session.createQuery("from Tag", Tag.class);
+            return query.list();
+        }
+    }
+
+    @Override
     public Tag getById(Long id) {
         try(Session session = sessionFactory.openSession()) {
             return session.byId(Tag.class)
                     .loadOptional(id)
-                    .orElseThrow(() -> new EntityNotFoundException("id"));
+                    .orElseThrow(() -> new EntityNotFoundException("Tag", id));
         }
     }
 
     @Override
     public Tag getByName(String name) {
         try(Session session = sessionFactory.openSession()) {
-            return session.createQuery("from Tag where name = :name", Tag.class)
+            return session.createQuery("from Tag where lower(name) = lower(:name)", Tag.class)
                     .setParameter("name", name)
                     .uniqueResultOptional()
-                    .orElseThrow(() -> new EntityNotFoundException("name"));
-        }
-    }
-
-    @Override
-    public List<Tag> getAll() {
-        try(Session session = sessionFactory.openSession()) {
-            Query<Tag> query = session.createQuery("from Tag", Tag.class);
-            return query.list();
+                    .orElseThrow(() -> new EntityNotFoundException("Tag", "name", name));
         }
     }
 

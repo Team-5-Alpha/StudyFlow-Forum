@@ -5,11 +5,10 @@ import telerik.project.models.User;
 import java.util.List;
 
 public interface UserRepository {
-    User getById(Long id);
 
     List<User> getAll();
 
-//  List<User> getByFilter(UserFilter filter);
+    User getById(Long id);
 
     User getByUsername(String username);
 

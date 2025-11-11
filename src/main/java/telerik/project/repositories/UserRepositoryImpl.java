@@ -22,19 +22,19 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public User getById(Long id) {
-        try(Session session = sessionFactory.openSession()) {
-            return session.byId(User.class)
-                    .loadOptional(id)
-                    .orElseThrow(() -> new EntityNotFoundException("id"));
-        }
-    }
-
-    @Override
     public List<User> getAll() {
         try(Session session = sessionFactory.openSession()) {
             Query<User> query = session.createQuery("from User", User.class);
             return query.list();
+        }
+    }
+
+    @Override
+    public User getById(Long id) {
+        try(Session session = sessionFactory.openSession()) {
+            return session.byId(User.class)
+                    .loadOptional(id)
+                    .orElseThrow(() -> new EntityNotFoundException("User", id));
         }
     }
 
@@ -44,7 +44,7 @@ public class UserRepositoryImpl implements UserRepository {
             return session.createQuery("from User where username = :username", User.class)
                     .setParameter("username", username)
                     .uniqueResultOptional()
-                    .orElseThrow(() -> new EntityNotFoundException("username"));
+                    .orElseThrow(() -> new EntityNotFoundException("User", "username", username));
         }
     }
 
@@ -54,7 +54,7 @@ public class UserRepositoryImpl implements UserRepository {
             return session.createQuery("from User where email = :email", User.class)
                     .setParameter("email", email)
                     .uniqueResultOptional()
-                    .orElseThrow(() -> new EntityNotFoundException("email"));
+                    .orElseThrow(() -> new EntityNotFoundException("User", "email", email));
         }
     }
 
