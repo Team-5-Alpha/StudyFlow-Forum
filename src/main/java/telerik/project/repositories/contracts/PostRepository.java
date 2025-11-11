@@ -5,11 +5,10 @@ import telerik.project.models.Post;
 import java.util.List;
 
 public interface PostRepository {
-    Post getById(Long id);
 
     List<Post> getAll();
 
-//  List<Post> getByFilter(PostFilter filter);
+    Post getById(Long id);
 
     long countByAuthorId(Long authorId);
 

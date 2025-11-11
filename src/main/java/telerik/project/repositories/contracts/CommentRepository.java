@@ -5,11 +5,10 @@ import telerik.project.models.Comment;
 import java.util.List;
 
 public interface CommentRepository {
-    Comment getById(Long id);
 
     List<Comment> getAll();
 
-//  List<Comment> getByFilter(CommentFilter filter);
+    Comment getById(Long id);
 
     long countByPostId(Long postId);
 

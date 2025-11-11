@@ -22,19 +22,19 @@ public class NotificationRepositoryImpl implements NotificationRepository {
     }
 
     @Override
-    public Notification getById(Long id) {
-        try(Session session = sessionFactory.openSession()) {
-            return session.byId(Notification.class)
-                    .loadOptional(id)
-                    .orElseThrow(() -> new EntityNotFoundException("id"));
-        }
-    }
-
-    @Override
     public List<Notification> getAll() {
         try(Session session = sessionFactory.openSession()) {
             Query<Notification> query = session.createQuery("from Notification", Notification.class);
             return query.list();
+        }
+    }
+
+    @Override
+    public Notification getById(Long id) {
+        try(Session session = sessionFactory.openSession()) {
+            return session.byId(Notification.class)
+                    .loadOptional(id)
+                    .orElseThrow(() -> new EntityNotFoundException("Notification", id));
         }
     }
 

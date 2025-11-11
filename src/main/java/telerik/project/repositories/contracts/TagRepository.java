@@ -5,11 +5,12 @@ import telerik.project.models.Tag;
 import java.util.List;
 
 public interface TagRepository {
+
+    List<Tag> getAll();
+
     Tag getById(Long id);
 
     Tag getByName(String name);
-
-    List<Tag> getAll();
 
     void create(Tag tag);
 
