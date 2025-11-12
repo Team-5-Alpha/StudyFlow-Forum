@@ -1,4 +1,4 @@
 package telerik.project.helpers;
 
-public class UserMapper {
+public class AuthenticationHelper {
 }
