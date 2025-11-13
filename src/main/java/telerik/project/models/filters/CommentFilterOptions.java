@@ -1,12 +1,11 @@
 package telerik.project.models.filters;
 
+import lombok.Getter;
+
 import java.util.Optional;
 
+@Getter
 public class CommentFilterOptions {
-    /*postId
-    authorId
-    parentCommentId
-    sortBy*/
 
     private Optional<Long> postId;
     private Optional<Long> authorId;
@@ -27,21 +26,5 @@ public class CommentFilterOptions {
         this.authorId = Optional.ofNullable(authorId);
         this.parentCommentId = Optional.ofNullable(parentCommentId);
         this.sortBy = Optional.ofNullable(sortBy);
-    }
-
-    public Optional<Long> getPostId() {
-        return postId;
-    }
-
-    public Optional<Long> getAuthorId() {
-        return authorId;
-    }
-
-    public Optional<Long> getParentCommentId() {
-        return parentCommentId;
-    }
-
-    public Optional<String> getSortBy() {
-        return sortBy;
     }
 }
