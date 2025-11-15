@@ -97,6 +97,14 @@ public class User {
     @OneToMany(mappedBy = "recipient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Notification> receivedNotifications;
 
+    public boolean isAdmin() {
+        return this.role == Role.ADMIN;
+    }
+
+    public boolean isUser() {
+        return this.role == Role.USER;
+    }
+
     @PrePersist
     public void onCreate() {
         createdAt = LocalDateTime.now();
