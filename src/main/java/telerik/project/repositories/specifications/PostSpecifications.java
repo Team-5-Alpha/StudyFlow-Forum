@@ -14,57 +14,55 @@ import java.util.List;
 public class PostSpecifications {
 
     public static Specification<Post> withFilters(PostFilterOptions filterOptions) {
-        return (root, query, criteriaBuilder) -> {
+        return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
             filterOptions.getTitle().ifPresent(title ->
-                    predicates.add(titleContains(title).toPredicate(root, query, criteriaBuilder)));
+                    predicates.add(titleContains(title).toPredicate(root, query, cb)));
 
             filterOptions.getContentKeyword().ifPresent(content ->
-                    predicates.add(contentContains(content).toPredicate(root, query, criteriaBuilder)));
+                    predicates.add(contentContains(content).toPredicate(root, query, cb)));
 
             filterOptions.getAuthorId().ifPresent(authorId ->
-                    predicates.add(authorIdEquals(authorId).toPredicate(root, query, criteriaBuilder)));
+                    predicates.add(authorIdEquals(authorId).toPredicate(root, query, cb)));
 
             filterOptions.getTag().ifPresent(tag ->
-                    predicates.add(hasTag(tag).toPredicate(root, query, criteriaBuilder)));
+                    predicates.add(hasTag(tag).toPredicate(root, query, cb)));
 
             filterOptions.getIsDeleted().ifPresent(isDeleted ->
-                    predicates.add(isDeletedEquals(isDeleted).toPredicate(root, query, criteriaBuilder)));
+                    predicates.add(isDeletedEquals(isDeleted).toPredicate(root, query, cb)));
 
             query.distinct(true);
 
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
 
     private static Specification<Post> titleContains(String title) {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.like(criteriaBuilder.lower(root.get("title")),
-                        "%" + title.toLowerCase() + "%");
+        return (root, query, cb) ->
+                cb.like(cb.lower(root.get("title")), "%" + title.toLowerCase() + "%");
     }
 
     private static Specification<Post> contentContains(String keyword) {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.like(criteriaBuilder.lower(root.get("content")),
-                        "%" + keyword.toLowerCase() + "%");
+        return (root, query, cb) ->
+                cb.like(cb.lower(root.get("content")), "%" + keyword.toLowerCase() + "%");
     }
 
     private static Specification<Post> authorIdEquals(Long authorId) {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("author").get("id"), authorId);
+        return (root, query, cb) ->
+                cb.equal(root.get("author").get("id"), authorId);
     }
 
     private static Specification<Post> hasTag(String tagName) {
-        return (root, query, criteriaBuilder) -> {
+        return (root, query, cb) -> {
             Join<Post, Tag> join = root.join("tags");
-            return criteriaBuilder.equal(criteriaBuilder.lower(join.get("name")), tagName.toLowerCase());
+            return cb.equal(cb.lower(join.get("name")), tagName.toLowerCase());
         };
     }
 
     private static Specification<Post> isDeletedEquals(Boolean isDeleted) {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("isDeleted"), isDeleted);
+        return (root, query, cb) ->
+                cb.equal(root.get("isDeleted"), isDeleted);
     }
 
     public static Sort buildSort(PostFilterOptions filterOptions) {

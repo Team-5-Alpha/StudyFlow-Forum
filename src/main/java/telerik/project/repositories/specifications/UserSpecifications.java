@@ -14,46 +14,43 @@ import java.util.List;
 public class UserSpecifications {
 
     public static Specification<User> withFilters(UserFilterOptions filterOptions) {
-        return (root, query, criteriaBuilder) -> {
+        return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
             filterOptions.getUsername().ifPresent(username ->
-                    predicates.add(usernameContains(username).toPredicate(root, query, criteriaBuilder)));
+                    predicates.add(usernameContains(username).toPredicate(root, query, cb)));
 
             filterOptions.getEmail().ifPresent(email ->
-                    predicates.add(emailContains(email).toPredicate(root, query, criteriaBuilder)));
+                    predicates.add(emailContains(email).toPredicate(root, query, cb)));
 
             filterOptions.getFirstName().ifPresent(firstName ->
-                    predicates.add(firstNameContains(firstName).toPredicate(root, query, criteriaBuilder)));
+                    predicates.add(firstNameContains(firstName).toPredicate(root, query, cb)));
 
             filterOptions.getIsBlocked().ifPresent(isBlocked ->
-                    predicates.add(isBlockedEquals(isBlocked).toPredicate(root, query, criteriaBuilder)));
+                    predicates.add(isBlockedEquals(isBlocked).toPredicate(root, query, cb)));
 
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
 
     private static Specification<User> usernameContains(String username) {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.like(criteriaBuilder.lower(root.get("username")),
-                        "%" + username.toLowerCase() + "%");
+        return (root, query, cb) ->
+                cb.like(cb.lower(root.get("username")), "%" + username.toLowerCase() + "%");
     }
 
     private static Specification<User> emailContains(String email) {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.like(criteriaBuilder.lower(root.get("email")),
-                        "%" + email.toLowerCase() + "%");
+        return (root, query, cb) ->
+                cb.like(cb.lower(root.get("email")), "%" + email.toLowerCase() + "%");
     }
 
     private static Specification<User> firstNameContains(String firstName) {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.like(criteriaBuilder.lower(root.get("firstName")),
-                        "%" + firstName.toLowerCase() + "%");
+        return (root, query, cb) ->
+                cb.like(cb.lower(root.get("firstName")), "%" + firstName.toLowerCase() + "%");
     }
 
     private static Specification<User> isBlockedEquals(Boolean isBlocked) {
-        return (root, query, criteriaBuilder) ->
-                criteriaBuilder.equal(root.get("isBlocked"), isBlocked);
+        return (root, query, cb) ->
+                cb.equal(root.get("isBlocked"), isBlocked);
     }
 
     public static Sort buildSort(UserFilterOptions filterOptions) {
