@@ -77,6 +77,7 @@ public class UserServiceImpl implements UserService {
             user.setIsBlocked(false);
         }
 
+        //Todo: security phase - encode password
         userRepository.save(user);
     }
 
@@ -102,7 +103,7 @@ public class UserServiceImpl implements UserService {
         existing.setLastName(updatedUser.getLastName());
         existing.setEmail(updatedUser.getEmail());
         existing.setUsername(updatedUser.getUsername());
-        existing.setPassword(updatedUser.getPassword());
+        existing.setPassword(updatedUser.getPassword()); //Todo: Security change later
         existing.setPhoneNumber(updatedUser.getPhoneNumber());
         existing.setProfilePhotoURL(updatedUser.getProfilePhotoURL());
         existing.setUpdatedAt(LocalDateTime.now());
@@ -133,6 +134,8 @@ public class UserServiceImpl implements UserService {
         User user = getById(id);
         user.setIsBlocked(true);
         userRepository.save(user);
+
+        //Todo: Notify blocked user
     }
 
     @Override
@@ -148,6 +151,8 @@ public class UserServiceImpl implements UserService {
         User target = getById(id);
         target.setIsBlocked(false);
         userRepository.save(target);
+
+        //Todo: Notify unblocked user
     }
 
     @Override
@@ -163,6 +168,8 @@ public class UserServiceImpl implements UserService {
         User target = getById(id);
         target.setRole(Role.ADMIN);
         userRepository.save(target);
+
+        //Todo: Notify promoted user
     }
 
     @Override
@@ -186,7 +193,7 @@ public class UserServiceImpl implements UserService {
         actingUser.getFollowing().add(target);
         userRepository.save(actingUser);
 
-        //Todo trigger notification
+        //Todo: notify user
     }
 
     @Override
