@@ -37,41 +37,52 @@ public class CommentServiceImpl implements CommentService {
         this.userRepository = userRepository;
     }
 
-    // CRUD
-
     @Override
     public List<Comment> getAll(CommentFilterOptions filterOptions) {
-        Sort sort = CommentSpecifications.buildSort(filterOptions);
         return commentRepository.findAll(
                 CommentSpecifications.withFilters(filterOptions),
-                sort
+                CommentSpecifications.buildSort(filterOptions)
         );
     }
 
     @Override
     public Comment getById(Long id) {
         return commentRepository.findById(id)
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Comment", id));
+                .orElseThrow(() -> new EntityNotFoundException("Comment", id));
     }
 
     @Override
     @Transactional
     public void create(Comment comment, Long postId, User author) {
         Post post = postRepository.findById(postId)
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Post", postId));
+                .orElseThrow(() -> new EntityNotFoundException("Post", postId));
 
-        // Ensure author is managed (optionally, depending on how you pass User)
         User managedAuthor = userRepository.findById(author.getId())
-                .orElseThrow(() ->
-                        new EntityNotFoundException("User", author.getId()));
+                .orElseThrow(() -> new EntityNotFoundException("User", author.getId()));
 
-        comment.setId(null); // ensure new entity
+        if (managedAuthor.getIsBlocked() != null && managedAuthor.getIsBlocked()) {
+            throw new AuthorizationException("Blocked users cannot create comments.");
+        }
+
+        comment.setId(null);
         comment.setPost(post);
         comment.setAuthor(managedAuthor);
         if (comment.getIsDeleted() == null) {
             comment.setIsDeleted(false);
+        }
+
+        if (comment.getParentComment() != null) {
+            Comment parent = getById(comment.getParentComment().getId());
+
+            if (!parent.getPost().getId().equals(postId)) {
+                throw new AuthorizationException("Reply must belong to the same post.");
+            }
+
+            if (Boolean.TRUE.equals(parent.getIsDeleted())) {
+                throw new AuthorizationException("Cannot reply to a deleted comment.");
+            }
+
+            comment.setParentComment(parent);
         }
 
         commentRepository.save(comment);
@@ -87,7 +98,6 @@ public class CommentServiceImpl implements CommentService {
         }
 
         existing.setContent(updatedComment.getContent());
-        // Do not allow changing author/post via update
         commentRepository.save(existing);
     }
 
@@ -100,12 +110,9 @@ public class CommentServiceImpl implements CommentService {
             throw new AuthorizationException("You are not allowed to delete this comment.");
         }
 
-        // Soft delete
         existing.setIsDeleted(true);
         commentRepository.save(existing);
     }
-
-    // Likes
 
     @Override
     @Transactional
@@ -121,7 +128,6 @@ public class CommentServiceImpl implements CommentService {
             comment.setLikedByUsers(likedByUsers);
         }
 
-        // Keep the owning side (User.likedComments) in sync if needed
         if (managedUser.getLikedComments() == null) {
             managedUser.setLikedComments(new HashSet<>());
         }
@@ -130,6 +136,9 @@ public class CommentServiceImpl implements CommentService {
             likedByUsers.add(managedUser);
             managedUser.getLikedComments().add(comment);
         }
+
+        commentRepository.save(comment);
+        userRepository.save(managedUser);
     }
 
     @Override
@@ -137,8 +146,7 @@ public class CommentServiceImpl implements CommentService {
     public void unlikeComment(Long commentId, User user) {
         Comment comment = getById(commentId);
         User managedUser = userRepository.findById(user.getId())
-                .orElseThrow(() ->
-                        new EntityNotFoundException("User", user.getId()));
+                .orElseThrow(() -> new EntityNotFoundException("User", user.getId()));
 
         Set<User> likedByUsers = comment.getLikedByUsers();
         if (likedByUsers != null) {
@@ -148,9 +156,10 @@ public class CommentServiceImpl implements CommentService {
         if (managedUser.getLikedComments() != null) {
             managedUser.getLikedComments().remove(comment);
         }
-    }
 
-    // Comment structure
+        commentRepository.save(comment);
+        userRepository.save(managedUser);
+    }
 
     @Override
     public List<Comment> getReplies(Long parentCommentId) {
@@ -162,10 +171,13 @@ public class CommentServiceImpl implements CommentService {
         return commentRepository.countByPostId(postId);
     }
 
-    // Helpers
-
     private boolean cannotModifyComment(Comment comment, User actingUser) {
         if (actingUser == null || actingUser.getId() == null) {
+            return true;
+        }
+
+        boolean isBlocked = Boolean.TRUE.equals(actingUser.getIsBlocked());
+        if (isBlocked) {
             return true;
         }
 

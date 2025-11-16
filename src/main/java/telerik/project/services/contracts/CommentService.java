@@ -8,8 +8,6 @@ import java.util.List;
 
 public interface CommentService {
 
-    // CRUD
-
     List<Comment> getAll(CommentFilterOptions filterOptions);
 
     Comment getById(Long id);
@@ -20,13 +18,9 @@ public interface CommentService {
 
     void delete(Long id, User actingUser);
 
-    // Likes
-
     void likeComment(Long commentId, User user);
 
     void unlikeComment(Long commentId, User user);
-
-    // Comment structure
 
     List<Comment> getReplies(Long parentCommentId);
 
