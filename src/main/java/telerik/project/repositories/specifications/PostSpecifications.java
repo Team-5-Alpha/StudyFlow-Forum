@@ -29,6 +29,10 @@ public class PostSpecifications {
             filterOptions.getTag().ifPresent(tag ->
                     predicates.add(hasTag(tag).toPredicate(root, query, cb)));
 
+            if (filterOptions.getIsDeleted().isEmpty()) {
+                predicates.add(cb.isFalse(root.get("isDeleted")));
+            }
+
             filterOptions.getIsDeleted().ifPresent(isDeleted ->
                     predicates.add(isDeletedEquals(isDeleted).toPredicate(root, query, cb)));
 
