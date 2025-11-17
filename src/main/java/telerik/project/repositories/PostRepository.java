@@ -2,6 +2,7 @@ package telerik.project.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import telerik.project.models.Post;
 
@@ -15,6 +16,15 @@ public interface PostRepository extends JpaRepository<Post, Long>, JpaSpecificat
     List<Post> findByTags_Name(String tagName);
 
     List<Post> findByLikedByUsers_Id(Long userId);
+
+    @Query("""
+       SELECT p
+       FROM Post p
+       LEFT JOIN p.comments c
+       GROUP BY p
+       ORDER BY COUNT(c) DESC
+       """)
+    List<Post> findMostCommented();
 
     long countByAuthor_Id(Long authorId);
 }

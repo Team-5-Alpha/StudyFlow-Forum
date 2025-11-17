@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -49,7 +50,10 @@ public class Comment {
     private Comment parentComment;
 
     @ManyToMany(mappedBy = "likedComments", fetch = FetchType.LAZY)
-    private Set<User> likedByUsers;
+    private Set<User> likedByUsers = new HashSet<>();
+
+    @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private Set<Comment> replies = new HashSet<>();
 
     @PrePersist
     public void onCreate() {
