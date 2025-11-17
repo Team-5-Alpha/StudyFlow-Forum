@@ -23,6 +23,10 @@ public class CommentSpecifications {
             filterOptions.getParentCommentId().ifPresent(parentCommentId ->
                     predicates.add(parentCommentIdEquals(parentCommentId).toPredicate(root, query, cb)));
 
+            if (filterOptions.getIsDeleted().isEmpty()) {
+                predicates.add(cb.isFalse(root.get("isDeleted")));
+            }
+
             filterOptions.getIsDeleted().ifPresent(isDeleted ->
                     predicates.add(isDeletedEquals(isDeleted).toPredicate(root, query, cb)));
 

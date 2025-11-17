@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -59,10 +60,10 @@ public class User {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private Set<Post> posts;
+    private Set<Post> posts = new HashSet<>();
 
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private Set<Comment> comments;
+    private Set<Comment> comments = new HashSet<>();
 
     @ManyToMany( fetch = FetchType.LAZY)
     @JoinTable(
@@ -70,7 +71,7 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "post_id")
     )
-    private Set<Post> likedPosts;
+    private Set<Post> likedPosts = new HashSet<>();
 
     @ManyToMany( fetch = FetchType.LAZY)
     @JoinTable(
@@ -78,10 +79,10 @@ public class User {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "comment_id")
     )
-    private Set<Comment> likedComments;
+    private Set<Comment> likedComments = new HashSet<>();
 
     @ManyToMany(mappedBy = "following",  fetch = FetchType.LAZY)
-    private Set<User> followers;
+    private Set<User> followers = new HashSet<>();
 
     @ManyToMany( fetch = FetchType.LAZY)
     @JoinTable(
@@ -89,13 +90,13 @@ public class User {
             joinColumns = @JoinColumn(name = "follower_id"),
             inverseJoinColumns = @JoinColumn(name = "followed_id")
     )
-    private Set<User> following;
+    private Set<User> following = new HashSet<>();
 
     @OneToMany(mappedBy = "actor", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<Notification> sentNotifications;
+    private Set<Notification> sentNotifications = new HashSet<>();
 
     @OneToMany(mappedBy = "recipient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private Set<Notification> receivedNotifications;
+    private Set<Notification> receivedNotifications = new HashSet<>();
 
     public boolean isAdmin() {
         return this.role == Role.ADMIN;

@@ -1,5 +1,6 @@
 package telerik.project.services;
 
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import telerik.project.exceptions.AuthorizationException;
@@ -10,7 +11,6 @@ import telerik.project.models.User;
 import telerik.project.models.filters.PostFilterOptions;
 import telerik.project.repositories.PostRepository;
 import telerik.project.repositories.specifications.PostSpecifications;
-import telerik.project.services.contracts.CommentService;
 import telerik.project.services.contracts.NotificationService;
 import telerik.project.services.contracts.PostService;
 import telerik.project.services.contracts.TagService;
@@ -25,16 +25,13 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final TagService tagService;
     private final NotificationService notificationService;
-    private final CommentService commentService;
 
     public PostServiceImpl(PostRepository postRepository,
                            TagService tagService,
-                           NotificationService notificationService,
-                           CommentService commentService) {
+                           NotificationService notificationService) {
         this.postRepository = postRepository;
         this.tagService = tagService;
         this.notificationService = notificationService;
-        this.commentService = commentService;
     }
 
     @Override
@@ -47,15 +44,24 @@ public class PostServiceImpl implements PostService {
 
     @Override
     public Post getById(Long id) {
-        return postRepository.findById(id)
+        Post post = postRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Post", id));
+
+        if (Boolean.TRUE.equals(post.getIsDeleted())) {
+            throw new EntityNotFoundException("Post", id);
+        }
+
+        return post;
     }
 
     @Override
     public void create(Post post, User author) {
+        if (Boolean.TRUE.equals(author.getIsBlocked())) {
+            throw new AuthorizationException("Blocked users cannot create posts.");
+        }
+
         post.setAuthor(author);
 
-        //Todo: Tags should be normalized before saving and model should initialize empty collections by default
         Set<Tag> fixedTags = post.getTags().stream()
                 .map(t -> tagService.createIfNotExists(t.getName()))
                 .collect(Collectors.toSet());
@@ -63,12 +69,19 @@ public class PostServiceImpl implements PostService {
         post.setTags(fixedTags);
         postRepository.save(post);
 
-        //Todo: notify author followers
+        for (User follower : author.getFollowers()) {
+            notificationService.send(author, follower, post.getId(), "POST", "CREATE");
+        }
     }
 
     @Override
-    public void update(Long id, Post updatedPost, User actingUser) {
-        Post existing = getById(id);
+    @Transactional
+    public void update(Long postId, Post updatedPost, User actingUser) {
+        if (Boolean.TRUE.equals(actingUser.getIsBlocked())) {
+            throw new AuthorizationException("Blocked users cannot update posts.");
+        }
+
+        Post existing = getById(postId);
 
         if (!actingUser.isAdmin() && !existing.getAuthor().getId().equals(actingUser.getId())) {
             throw new AuthorizationException("You cannot modify this post.");
@@ -77,7 +90,6 @@ public class PostServiceImpl implements PostService {
         existing.setTitle(updatedPost.getTitle());
         existing.setContent(updatedPost.getContent());
 
-        //Todo: Tags should be normalized before saving and model should initialize empty collections by default
         Set<Tag> fixedTags = updatedPost.getTags().stream()
                 .map(tag -> tagService.createIfNotExists(tag.getName()))
                 .collect(Collectors.toSet());
@@ -87,8 +99,12 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public void delete(Long id, User actingUser) {
-        Post post = getById(id);
+    public void delete(Long postId, User actingUser) {
+        if (Boolean.TRUE.equals(actingUser.getIsBlocked())) {
+            throw new AuthorizationException("Blocked users cannot delete posts.");
+        }
+
+        Post post = getById(postId);
 
         if (!actingUser.isAdmin() && !post.getAuthor().getId().equals(actingUser.getId())) {
             throw new AuthorizationException("You cannot delete this post.");
@@ -99,30 +115,35 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional
     public void likePost(Long postId, User user) {
-        Post post = getById(postId);
-
-        if (post.getLikedByUsers().contains(user)) {
-            return;
+        if (Boolean.TRUE.equals(user.getIsBlocked())) {
+            throw new AuthorizationException("Blocked users cannot like posts.");
         }
 
-        //Todo: LikedByUser should be initialized in the model
-        post.getLikedByUsers().add(user);
-        postRepository.save(post);
-
-        //Todo: Notify post author
-    }
-
-    @Override
-    public void unlikePost(Long postId, User user) {
         Post post = getById(postId);
 
         if (!post.getLikedByUsers().contains(user)) {
-            return;
+            post.getLikedByUsers().add(user);
+            postRepository.save(post);
+
+            notificationService.send(user, post.getAuthor(), postId, "POST", "LIKE");
+        }
+    }
+
+    @Override
+    @Transactional
+    public void unlikePost(Long postId, User user) {
+        if (Boolean.TRUE.equals(user.getIsBlocked())) {
+            throw new AuthorizationException("Blocked users cannot unlike posts.");
         }
 
-        post.getLikedByUsers().remove(user);
-        postRepository.save(post);
+        Post post = getById(postId);
+
+        if (post.getLikedByUsers().contains(user)) {
+            post.getLikedByUsers().remove(user);
+            postRepository.save(post);
+        }
     }
 
     @Override
@@ -131,27 +152,43 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    public List<Post> getByAuthorId(Long authorId) {
+        return postRepository.findByAuthor_Id(authorId);
+    }
+
+    @Override
     public List<Post> getMostRecent() {
         return postRepository.findAll(
                 Sort.by(Sort.Direction.DESC, "createdAt")
-        ).stream().limit(10).toList();
+                ).stream()
+                .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
+                .limit(10)
+                .toList();
     }
 
     @Override
     public List<Post> getMostCommented() {
-        //Todo: implement when commentService is ready
-        return List.of();
+        return postRepository.findMostCommented()
+                .stream()
+                .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
+                .limit(10)
+                .toList();
     }
 
     @Override
     public List<Post> getByTags(List<String> tags) {
         return tags.stream()
                 .flatMap(tag -> postRepository.findByTags_Name(tag).stream())
+                .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
                 .distinct()
                 .toList();
     }
 
+    @Override
     public List<Post> getLikedPosts(Long userId) {
-        return postRepository.findByLikedByUsers_Id(userId);
+        return postRepository.findByLikedByUsers_Id(userId)
+                .stream()
+                .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
+                .toList();
     }
 }

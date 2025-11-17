@@ -24,6 +24,8 @@ public interface PostService {
 
     long countByAuthor(Long authorId);
 
+    List<Post> getByAuthorId(Long authorId);
+
     List<Post> getMostCommented();
 
     List<Post> getMostRecent();

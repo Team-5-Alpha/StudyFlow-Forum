@@ -9,10 +9,10 @@ import telerik.project.models.Post;
 import telerik.project.models.Role;
 import telerik.project.models.User;
 import telerik.project.models.filters.UserFilterOptions;
-import telerik.project.repositories.PostRepository;
 import telerik.project.repositories.UserRepository;
 import telerik.project.repositories.specifications.UserSpecifications;
 import telerik.project.services.contracts.NotificationService;
+import telerik.project.services.contracts.PostService;
 import telerik.project.services.contracts.UserService;
 
 import java.time.LocalDateTime;
@@ -22,14 +22,12 @@ import java.util.List;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final PostRepository postRepository;
+    private final PostService postService;
     private final NotificationService notificationService;
 
-    public UserServiceImpl(UserRepository userRepository,
-                           PostRepository postRepository,
-                           NotificationService notificationService) {
+    public UserServiceImpl(UserRepository userRepository, PostService postService, NotificationService notificationService) {
         this.userRepository = userRepository;
-        this.postRepository = postRepository;
+        this.postService = postService;
         this.notificationService = notificationService;
     }
 
@@ -77,136 +75,150 @@ public class UserServiceImpl implements UserService {
             user.setIsBlocked(false);
         }
 
-        //Todo: security phase - encode password
+        // Todo: security phase - encode password
         userRepository.save(user);
     }
 
     @Override
-    public void update(Long id, User updatedUser, User actingUser) {
-        User existing = getById(id);
+    public void update(Long targetUserId, User updatedUser, User actingUser) {
+        User target = getById(targetUserId);
 
-        if (!actingUser.isAdmin() && !existing.getId().equals(actingUser.getId())) {
+
+        if (Boolean.TRUE.equals(target.getIsBlocked()) && !actingUser.isAdmin()) {
+            throw new AuthorizationException("Blocked accounts cannot be modified.");
+        }
+
+        if (Boolean.TRUE.equals(actingUser.getIsBlocked())) {
+            throw new AuthorizationException("Blocked accounts cannot modify profiles.");
+        }
+
+        if (!actingUser.isAdmin() && !target.getId().equals(actingUser.getId())) {
             throw new AuthorizationException("You are not allowed to modify this user.");
         }
 
-        if (!existing.getUsername().equals(updatedUser.getUsername())
-                && userRepository.existsByUsername(updatedUser.getUsername())) {
-            throw new EntityDuplicateException("User", "username", updatedUser.getUsername());
-        }
-
-        if (!existing.getEmail().equals(updatedUser.getEmail())
+        if (!target.getEmail().equals(updatedUser.getEmail())
                 && userRepository.existsByEmail(updatedUser.getEmail())) {
             throw new EntityDuplicateException("User", "email", updatedUser.getEmail());
         }
 
-        existing.setFirstName(updatedUser.getFirstName());
-        existing.setLastName(updatedUser.getLastName());
-        existing.setEmail(updatedUser.getEmail());
-        existing.setUsername(updatedUser.getUsername());
-        existing.setPassword(updatedUser.getPassword()); //Todo: Security change later
-        existing.setPhoneNumber(updatedUser.getPhoneNumber());
-        existing.setProfilePhotoURL(updatedUser.getProfilePhotoURL());
-        existing.setUpdatedAt(LocalDateTime.now());
+        target.setFirstName(updatedUser.getFirstName());
+        target.setLastName(updatedUser.getLastName());
+        target.setEmail(updatedUser.getEmail());
+        target.setPassword(updatedUser.getPassword()); //Todo: Security change later
+        target.setPhoneNumber(updatedUser.getPhoneNumber());
+        target.setProfilePhotoURL(updatedUser.getProfilePhotoURL());
+        target.setUpdatedAt(LocalDateTime.now());
 
-        userRepository.save(existing);
+        userRepository.save(target);
     }
 
     @Override
-    public void delete(Long id, User actingUser) {
+    public void delete(Long targetUserId, User actingUser) {
         if (!actingUser.isAdmin()) {
             throw new AuthorizationException("Only admins can delete users.");
         }
 
-        User user = getById(id);
-        userRepository.delete(user);
+        if (actingUser.getId().equals(targetUserId)) {
+            throw new AuthorizationException("You cannot delete yourself.");
+        }
+
+        userRepository.delete(getById(targetUserId));
     }
 
     @Override
-    public void blockUser(Long id, User actingUser) {
+    public void blockUser(Long targetUserId, User actingUser) {
         if (!actingUser.isAdmin()) {
             throw new AuthorizationException("Only admins can block users.");
         }
 
-        if (actingUser.getId().equals(id)) {
+        if (actingUser.getId().equals(targetUserId)) {
             throw new AuthorizationException("You cannot block yourself.");
         }
 
-        User user = getById(id);
-        user.setIsBlocked(true);
-        userRepository.save(user);
+        User target = getById(targetUserId);
+        target.setIsBlocked(true);
+        userRepository.save(target);
 
-        //Todo: Notify blocked user
+        notificationService.send(actingUser, target, targetUserId, "USER", "BLOCK");
     }
 
     @Override
-    public void unblockUser(Long id, User actingUser) {
+    public void unblockUser(Long targetUserId, User actingUser) {
         if (!actingUser.isAdmin()) {
             throw new AuthorizationException("Only admins can unblock users.");
         }
 
-        if (actingUser.getId().equals(id)) {
+        if (actingUser.getId().equals(targetUserId)) {
             throw new AuthorizationException("You cannot unblock yourself.");
         }
 
-        User target = getById(id);
+        User target = getById(targetUserId);
         target.setIsBlocked(false);
         userRepository.save(target);
 
-        //Todo: Notify unblocked user
+        notificationService.send(actingUser, target, targetUserId, "USER", "UNBLOCK");
     }
 
     @Override
-    public void promoteToAdmin(Long id, User actingUser) {
+    public void promoteToAdmin(Long targetUserId, User actingUser) {
         if (!actingUser.isAdmin()) {
             throw new AuthorizationException("Only admins can promote users.");
         }
 
-        if (actingUser.getId().equals(id)) {
+        if (actingUser.getId().equals(targetUserId)) {
             throw new AuthorizationException("You cannot promote yourself.");
         }
 
-        User target = getById(id);
+        User target = getById(targetUserId);
         target.setRole(Role.ADMIN);
         userRepository.save(target);
 
-        //Todo: Notify promoted user
+        notificationService.send(actingUser, target, targetUserId, "ADMIN", "PROMOTE");
     }
 
     @Override
     public List<Post> getPostsByUser(Long userId) {
-        return postRepository.findByAuthor_Id(userId);
+        return postService.getByAuthorId(userId);
     }
 
     @Override
     @Transactional
     public void followUser(Long targetUserId, User actingUser) {
-        User target = getById(targetUserId);
+        if (Boolean.TRUE.equals(actingUser.getIsBlocked())) {
+            throw new AuthorizationException("Blocked users cannot follow others.");
+        }
 
         if (actingUser.getId().equals(targetUserId)) {
             throw new AuthorizationException("You cannot follow yourself.");
         }
 
-        if (actingUser.getFollowing().contains(target)) {
-            return;
+        User target = getById(targetUserId);
+
+        if (!actingUser.getFollowing().contains(target)) {
+            actingUser.getFollowing().add(target);
+            userRepository.save(actingUser);
+
+            notificationService.send(actingUser, target, targetUserId, "USER", "FOLLOW");
         }
-
-        actingUser.getFollowing().add(target);
-        userRepository.save(actingUser);
-
-        //Todo: notify user
     }
 
     @Override
     @Transactional
     public void unfollowUser(Long targetUserId, User actingUser) {
-        User target = getById(targetUserId);
-
-        if (!actingUser.getFollowing().contains(target)) {
-            return;
+        if (Boolean.TRUE.equals(actingUser.getIsBlocked())) {
+            throw new AuthorizationException("Blocked users cannot unfollow others.");
         }
 
-        actingUser.getFollowing().remove(target);
-        userRepository.save(actingUser);
+        User target = getById(targetUserId);
+
+        if (actingUser.getId().equals(targetUserId)) {
+            throw new AuthorizationException("You cannot unfollow yourself.");
+        }
+
+        if (actingUser.getFollowing().contains(target)) {
+            actingUser.getFollowing().remove(target);
+            userRepository.save(actingUser);
+        }
     }
 
     @Override
@@ -221,10 +233,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean isFollowing(Long userId, Long targetUserId) {
-        User user = getById(userId);
-        User target = getById(targetUserId);
-
-        return user.getFollowing().contains(target);
+        return getById(userId).getFollowing().contains(getById(targetUserId));
     }
 
     @Override
@@ -239,6 +248,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void updateProfilePhoto(Long userId, String photoUrl, User actingUser) {
+        if (Boolean.TRUE.equals(actingUser.getIsBlocked())) {
+            throw new AuthorizationException("Blocked users cannot modify profile photos.");
+        }
+
         User target = getById(userId);
 
         if(!actingUser.isAdmin() && !actingUser.getId().equals(target.getId())) {

@@ -1,40 +1,34 @@
 package telerik.project.services;
 
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import telerik.project.exceptions.AuthorizationException;
 import telerik.project.exceptions.EntityNotFoundException;
 import telerik.project.models.Comment;
 import telerik.project.models.Post;
-import telerik.project.models.Role;
 import telerik.project.models.User;
 import telerik.project.models.filters.CommentFilterOptions;
 import telerik.project.repositories.CommentRepository;
-import telerik.project.repositories.PostRepository;
-import telerik.project.repositories.UserRepository;
 import telerik.project.repositories.specifications.CommentSpecifications;
 import telerik.project.services.contracts.CommentService;
+import telerik.project.services.contracts.NotificationService;
+import telerik.project.services.contracts.PostService;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @Service
 public class CommentServiceImpl implements CommentService {
 
     private final CommentRepository commentRepository;
-    private final PostRepository postRepository;
-    private final UserRepository userRepository;
+    private final PostService postService;
+    private final NotificationService notificationService;
 
-    @Autowired
     public CommentServiceImpl(CommentRepository commentRepository,
-                              PostRepository postRepository,
-                              UserRepository userRepository) {
+                              PostService postService,
+                              NotificationService notificationService) {
         this.commentRepository = commentRepository;
-        this.postRepository = postRepository;
-        this.userRepository = userRepository;
+        this.postService = postService;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -52,24 +46,20 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    @Transactional
     public void create(Comment comment, Long postId, User author) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new EntityNotFoundException("Post", postId));
-
-        User managedAuthor = userRepository.findById(author.getId())
-                .orElseThrow(() -> new EntityNotFoundException("User", author.getId()));
-
-        if (managedAuthor.getIsBlocked() != null && managedAuthor.getIsBlocked()) {
+        if (Boolean.TRUE.equals(author.getIsBlocked())) {
             throw new AuthorizationException("Blocked users cannot create comments.");
         }
 
+        if (author.getIsBlocked()) {
+            throw new AuthorizationException("Blocked users cannot create comments.");
+        }
+
+        Post post = postService.getById(postId);
+
         comment.setId(null);
         comment.setPost(post);
-        comment.setAuthor(managedAuthor);
-        if (comment.getIsDeleted() == null) {
-            comment.setIsDeleted(false);
-        }
+        comment.setAuthor(author);
 
         if (comment.getParentComment() != null) {
             Comment parent = getById(comment.getParentComment().getId());
@@ -86,15 +76,21 @@ public class CommentServiceImpl implements CommentService {
         }
 
         commentRepository.save(comment);
+
+        notificationService.send(author, post.getAuthor(), postId, "COMMENT", "CREATE");
     }
 
     @Override
     @Transactional
     public void update(Long id, Comment updatedComment, User actingUser) {
+        if (Boolean.TRUE.equals(actingUser.getIsBlocked())) {
+            throw new AuthorizationException("Blocked users cannot update comments.");
+        }
+
         Comment existing = getById(id);
 
-        if (cannotModifyComment(existing, actingUser)) {
-            throw new AuthorizationException("You are not allowed to modify this comment.");
+        if (!actingUser.isAdmin() && !existing.getAuthor().getId().equals(actingUser.getId())) {
+            throw new AuthorizationException("You cannot modify this comment.");
         }
 
         existing.setContent(updatedComment.getContent());
@@ -104,61 +100,41 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional
     public void delete(Long id, User actingUser) {
-        Comment existing = getById(id);
+        if (Boolean.TRUE.equals(actingUser.getIsBlocked())) {
+            throw new AuthorizationException("Blocked users cannot delete comments.");
+        }
+        Comment comment = getById(id);
 
-        if (cannotModifyComment(existing, actingUser)) {
-            throw new AuthorizationException("You are not allowed to delete this comment.");
+        if (!actingUser.isAdmin() && !comment.getAuthor().getId().equals(actingUser.getId())) {
+            throw new AuthorizationException("You cannot delete this comment.");
         }
 
-        existing.setIsDeleted(true);
-        commentRepository.save(existing);
+        comment.setIsDeleted(true);
+        commentRepository.save(comment);
     }
 
     @Override
     @Transactional
     public void likeComment(Long commentId, User user) {
         Comment comment = getById(commentId);
-        User managedUser = userRepository.findById(user.getId())
-                .orElseThrow(() ->
-                        new EntityNotFoundException("User", user.getId()));
 
-        Set<User> likedByUsers = comment.getLikedByUsers();
-        if (likedByUsers == null) {
-            likedByUsers = new HashSet<>();
-            comment.setLikedByUsers(likedByUsers);
+        if (!comment.getLikedByUsers().contains(user)) {
+            comment.getLikedByUsers().add(user);
+            commentRepository.save(comment);
+
+            notificationService.send(user, comment.getAuthor(), commentId, "COMMENT", "LIKE");
         }
-
-        if (managedUser.getLikedComments() == null) {
-            managedUser.setLikedComments(new HashSet<>());
-        }
-
-        if (!likedByUsers.contains(managedUser)) {
-            likedByUsers.add(managedUser);
-            managedUser.getLikedComments().add(comment);
-        }
-
-        commentRepository.save(comment);
-        userRepository.save(managedUser);
     }
 
     @Override
     @Transactional
     public void unlikeComment(Long commentId, User user) {
         Comment comment = getById(commentId);
-        User managedUser = userRepository.findById(user.getId())
-                .orElseThrow(() -> new EntityNotFoundException("User", user.getId()));
 
-        Set<User> likedByUsers = comment.getLikedByUsers();
-        if (likedByUsers != null) {
-            likedByUsers.remove(managedUser);
+        if (comment.getLikedByUsers().contains(user)) {
+            comment.getLikedByUsers().remove(user);
+            commentRepository.save(comment);
         }
-
-        if (managedUser.getLikedComments() != null) {
-            managedUser.getLikedComments().remove(comment);
-        }
-
-        commentRepository.save(comment);
-        userRepository.save(managedUser);
     }
 
     @Override
@@ -169,23 +145,5 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public long countByPostId(Long postId) {
         return commentRepository.countByPostId(postId);
-    }
-
-    private boolean cannotModifyComment(Comment comment, User actingUser) {
-        if (actingUser == null || actingUser.getId() == null) {
-            return true;
-        }
-
-        boolean isBlocked = Boolean.TRUE.equals(actingUser.getIsBlocked());
-        if (isBlocked) {
-            return true;
-        }
-
-        boolean isAuthor = comment.getAuthor() != null
-                && comment.getAuthor().getId().equals(actingUser.getId());
-
-        boolean isAdmin = actingUser.getRole() == Role.ADMIN;
-
-        return !(isAuthor || isAdmin);
     }
 }

@@ -49,23 +49,19 @@ public class TagServiceImpl implements TagService {
 
     @Override
     public void update(Long id, Tag updatedTag) {
-        Tag existingTag = tagRepository.findById(id)
-                .orElseThrow(()-> new EntityNotFoundException("Tag", id));
+        Tag existing = getById(id);
 
         if(tagRepository.existsByNameIgnoreCase(updatedTag.getName())
-            && !existingTag.getName().equalsIgnoreCase(updatedTag.getName())) {
+                && !existing.getName().equalsIgnoreCase(updatedTag.getName())) {
             throw new EntityDuplicateException("Tag", "name", updatedTag.getName());
         }
 
-        existingTag.setName(updatedTag.getName());
-        tagRepository.save(existingTag);
+        existing.setName(updatedTag.getName());
+        tagRepository.save(existing);
     }
 
     @Override
     public void delete(Long id) {
-        Tag existingTag = tagRepository.findById(id)
-                .orElseThrow(()-> new EntityNotFoundException("Tag", id));
-
-        tagRepository.delete(existingTag);
+        tagRepository.delete(getById(id));
     }
 }

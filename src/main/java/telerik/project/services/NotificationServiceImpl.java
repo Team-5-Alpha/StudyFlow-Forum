@@ -1,5 +1,6 @@
 package telerik.project.services;
 
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import telerik.project.exceptions.AuthorizationException;
 import telerik.project.exceptions.EntityNotFoundException;
@@ -51,13 +52,14 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = getById(id);
 
         if (!notification.getRecipient().getId().equals(userId)) {
-            throw new AuthorizationException("You cannot dele someone else's notifications.");
+            throw new AuthorizationException("You cannot delete someone else's notifications.");
         }
 
         notificationRepository.delete(notification);
     }
 
     @Override
+    @Transactional
     public void markAsRead(Long id, Long userId) {
         Notification notification = getById(id);
 
@@ -71,13 +73,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     public void markAllAsRead(Long userId) {
-        List<Notification> notifications = notificationRepository
-                .findByRecipient_Id(userId);
-
-        for (Notification n : notifications) {
-            n.setIsRead(true);
-        }
-
+        List<Notification> notifications = notificationRepository.findByRecipient_Id(userId);
+        notifications.forEach(n -> n.setIsRead(true));
         notificationRepository.saveAll(notifications);
     }
 
