@@ -1,6 +1,7 @@
 package telerik.project.services;
 
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import telerik.project.exceptions.EntityNotFoundException;
 import telerik.project.helpers.AuthorizationHelper;
@@ -12,6 +13,7 @@ import telerik.project.repositories.NotificationRepository;
 import telerik.project.repositories.UserRepository;
 import telerik.project.repositories.specifications.NotificationSpecifications;
 import telerik.project.services.contracts.NotificationService;
+import telerik.project.utils.PaginationUtils;
 
 import java.util.List;
 
@@ -31,10 +33,15 @@ public class NotificationServiceImpl implements NotificationService {
     public List<Notification> getAllForUser(Long userId, NotificationFilterOptions filterOptions) {
         userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User", userId));
 
-        return notificationRepository.findAll(
-                NotificationSpecifications.withFilters(filterOptions),
+        Pageable pageable = PaginationUtils.createPageable(
+                filterOptions.getPage(),
+                filterOptions.getPage(),
                 NotificationSpecifications.buildSort(filterOptions)
         );
+
+        return notificationRepository
+                .findAll(NotificationSpecifications.withFilters(filterOptions), pageable)
+                .getContent();
     }
 
     @Override

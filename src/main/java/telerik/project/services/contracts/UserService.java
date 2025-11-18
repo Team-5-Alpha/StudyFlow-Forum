@@ -21,6 +21,8 @@ public interface UserService {
 
     void delete(Long id, User actingUser);
 
+    void updatePhone(Long userId, String phoneNumber, User actingUser);
+
     void blockUser(Long id, User actingUser);
 
     void unblockUser(Long id, User actingUser);
@@ -42,6 +44,4 @@ public interface UserService {
     long countFollowers(Long userId);
 
     long countFollowing(Long userId);
-
-    void updateProfilePhoto(Long userId, String photoUrl, User actingUser);
 }

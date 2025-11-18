@@ -1,8 +1,9 @@
 package telerik.project.services;
 
-import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import telerik.project.exceptions.EntityNotFoundException;
 import telerik.project.helpers.AuthorizationHelper;
 import telerik.project.helpers.validators.PostValidationHelper;
@@ -16,6 +17,7 @@ import telerik.project.services.contracts.NotificationService;
 import telerik.project.services.contracts.PostService;
 import telerik.project.services.contracts.TagService;
 import telerik.project.utils.NormalizationUtils;
+import telerik.project.utils.PaginationUtils;
 
 import java.util.List;
 import java.util.Set;
@@ -37,14 +39,21 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Post> getAll(PostFilterOptions filterOptions) {
-        return postRepository.findAll(
-                PostSpecifications.withFilters(filterOptions),
+        Pageable pageable = PaginationUtils.createPageable(
+                filterOptions.getPage(),
+                filterOptions.getSize(),
                 PostSpecifications.buildSort(filterOptions)
         );
+
+        return postRepository
+                .findAll(PostSpecifications.withFilters(filterOptions), pageable)
+                .getContent();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Post getById(Long id) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Post", id));
@@ -55,16 +64,12 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional
     public void create(Post post, User author) {
         AuthorizationHelper.validateNotBlocked(author);
 
         post.setAuthor(author);
 
-        Set<Tag> fixedTags = post.getTags().stream()
-                .map(t -> tagService.createIfNotExists(NormalizationUtils.normalizeTagName(t.getName())))
-                .collect(Collectors.toSet());
-
-        post.setTags(fixedTags);
         postRepository.save(post);
 
         author.getFollowers().forEach(follower ->
@@ -156,21 +161,25 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public boolean isLiked(Post post, User user) {
         return post.getLikedByUsers().contains(user);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public long countByAuthor(Long authorId) {
         return postRepository.countByAuthor_Id(authorId);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Post> getByAuthorId(Long authorId) {
         return postRepository.findByAuthor_Id(authorId);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Post> getMostRecent() {
         return postRepository.findAll(
                 Sort.by(Sort.Direction.DESC, "createdAt")
@@ -181,6 +190,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Post> getMostCommented() {
         return postRepository.findMostCommented()
                 .stream()
@@ -190,6 +200,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Post> getByTags(List<String> tags) {
         return tags.stream()
                 .flatMap(t -> postRepository.findByTags_Name(t).stream())
@@ -199,6 +210,7 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Post> getLikedPosts(Long userId) {
         return postRepository.findByLikedByUsers_Id(userId)
                 .stream()
