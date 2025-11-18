@@ -1,4 +1,17 @@
 package telerik.project.helpers;
 
-public class ExceptionMessages {
+public final class ExceptionMessages {
+
+    private ExceptionMessages() {}
+
+    public static final String ADMIN_ONLY = "Only admins can perform this action.";
+    public static final String USER_BLOCKED = "Blocked users cannot perform this action.";
+    public static final String CANNOT_SELF_ACTION = "You cannot perform this action on yourself.";
+    public static final String CANNOT_MODIFY_OTHER_USER = "You are not allowed to modify this resource.";
+
+    public static final String COMMENT_DELETED = "This comment has been deleted.";
+    public static final String REPLY_WRONG_POST = "Reply must belong to the same post.";
+    public static final String REPLY_TO_DELETE = "Cannot reply to a deleted comment.";
+
+    public static final String NOTIFICATION_NOT_ALLOWED = "You cannot modify someone else's notifications.";
 }
