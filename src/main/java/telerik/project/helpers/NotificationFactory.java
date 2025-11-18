@@ -3,13 +3,11 @@ package telerik.project.helpers;
 import telerik.project.models.Notification;
 import telerik.project.models.User;
 
-import java.time.LocalDateTime;
-
 public final class NotificationFactory {
 
     private NotificationFactory() {}
 
-    public static Notification cretae(
+    public static Notification create(
             User actor,
             User recipient,
             Long entityId,

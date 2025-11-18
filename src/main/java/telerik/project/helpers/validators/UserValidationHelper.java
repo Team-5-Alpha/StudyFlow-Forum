@@ -18,4 +18,10 @@ public final class UserValidationHelper {
             throw new EntityDuplicateException("User", "username", username);
         }
     }
+
+    public static void validateEmailNotTaken(UserRepository repository, String email) {
+        if (repository.existsByEmail(email)) {
+            throw new EntityDuplicateException("User", "email", email);
+        }
+    }
 }

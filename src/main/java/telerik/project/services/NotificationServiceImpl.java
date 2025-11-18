@@ -2,8 +2,9 @@ package telerik.project.services;
 
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
-import telerik.project.exceptions.AuthorizationException;
 import telerik.project.exceptions.EntityNotFoundException;
+import telerik.project.helpers.AuthorizationHelper;
+import telerik.project.helpers.NotificationFactory;
 import telerik.project.models.Notification;
 import telerik.project.models.User;
 import telerik.project.models.filters.NotificationFilterOptions;
@@ -43,29 +44,24 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public void create(Notification notification) {
-        notificationRepository.save(notification);
-    }
-
-    @Override
     public void delete(Long id, Long userId) {
+        AuthorizationHelper.validateNotBlocked(getUserById(userId));
+
         Notification notification = getById(id);
 
-        if (!notification.getRecipient().getId().equals(userId)) {
-            throw new AuthorizationException("You cannot delete someone else's notifications.");
-        }
+        AuthorizationHelper.validateOwnerOrAdmin(getUserById(userId), notification.getRecipient());
 
         notificationRepository.delete(notification);
     }
 
     @Override
     @Transactional
-    public void markAsRead(Long id, Long userId) {
-        Notification notification = getById(id);
+    public void markAsRead(Long notificationId, Long userId) {
+        AuthorizationHelper.validateNotBlocked(getUserById(userId));
 
-        if (!notification.getRecipient().getId().equals(userId)) {
-            throw new AuthorizationException("You cannot modify someone else's notifications.");
-        }
+        Notification notification = getById(notificationId);
+
+        AuthorizationHelper.validateOwner(getUserById(userId), notification.getRecipient());
 
         notification.setIsRead(true);
         notificationRepository.save(notification);
@@ -74,19 +70,29 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void markAllAsRead(Long userId) {
         List<Notification> notifications = notificationRepository.findByRecipient_Id(userId);
-        notifications.forEach(n -> n.setIsRead(true));
+
+        for (Notification notification : notifications) {
+            AuthorizationHelper.validateOwner(getUserById(userId), notification.getRecipient());
+            notification.setIsRead(true);
+        }
+
         notificationRepository.saveAll(notifications);
+    }
+
+    private User getUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User", userId));
     }
 
     @Override
     public void send(User actor, User recipient, Long entityId, String entityType, String actionType) {
-        Notification notification = new Notification();
-        notification.setActor(actor);
-        notification.setRecipient(recipient);
-        notification.setEntityId(entityId);
-        notification.setEntityType(entityType);
-        notification.setActionType(actionType);
-        notification.setIsRead(false);
+        Notification notification = NotificationFactory.create(
+                actor,
+                recipient,
+                entityId,
+                entityType,
+                actionType
+        );
 
         notificationRepository.save(notification);
     }
