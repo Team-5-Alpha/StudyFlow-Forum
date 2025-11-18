@@ -1,8 +1,8 @@
 package telerik.project.services;
 
-import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import telerik.project.exceptions.EntityNotFoundException;
 import telerik.project.helpers.AuthorizationHelper;
 import telerik.project.helpers.NotificationFactory;
@@ -30,6 +30,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Notification> getAllForUser(Long userId, NotificationFilterOptions filterOptions) {
         userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User", userId));
 
@@ -45,12 +46,14 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Notification getById(Long id) {
         return notificationRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Notification", id));
     }
 
     @Override
+    @Transactional
     public void delete(Long id, Long userId) {
         AuthorizationHelper.validateNotBlocked(getUserById(userId));
 
@@ -75,6 +78,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    @Transactional
     public void markAllAsRead(Long userId) {
         List<Notification> notifications = notificationRepository.findByRecipient_Id(userId);
 
@@ -85,13 +89,14 @@ public class NotificationServiceImpl implements NotificationService {
 
         notificationRepository.saveAll(notifications);
     }
-
+    
     private User getUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User", userId));
     }
 
     @Override
+    @Transactional
     public void send(User actor, User recipient, Long entityId, String entityType, String actionType) {
         Notification notification = NotificationFactory.create(
                 actor,
