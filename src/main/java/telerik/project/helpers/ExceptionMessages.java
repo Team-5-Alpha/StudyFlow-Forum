@@ -9,6 +9,8 @@ public final class ExceptionMessages {
     public static final String CANNOT_SELF_ACTION = "You cannot perform this action on yourself.";
     public static final String CANNOT_MODIFY_OTHER_USER = "You are not allowed to modify this resource.";
 
+    public static final String POST_DELETED = "This post has been deleted.";
+
     public static final String COMMENT_DELETED = "This comment has been deleted.";
     public static final String REPLY_WRONG_POST = "Reply must belong to the same post.";
     public static final String REPLY_TO_DELETE = "Cannot reply to a deleted comment.";
