@@ -17,6 +17,9 @@ public class NotificationFilterOptions {
     private final Optional<String> sortBy;
     private final Optional<String> sortOrder;
 
+    private final Integer page;
+    private final Integer size;
+
     public NotificationFilterOptions() {
         this.recipientId = Optional.empty();
         this.actorId = Optional.empty();
@@ -27,6 +30,8 @@ public class NotificationFilterOptions {
         this.createdBefore = Optional.empty();
         this.sortBy = Optional.empty();
         this.sortOrder = Optional.empty();
+        this.page = null;
+        this.size = null;
     }
 
     public NotificationFilterOptions(Long recipientId,
@@ -37,7 +42,9 @@ public class NotificationFilterOptions {
                                      LocalDateTime createdAfter,
                                      LocalDateTime createdBefore,
                                      String sortBy,
-                                     String sortOrder) {
+                                     String sortOrder,
+                                     Integer page,
+                                     Integer size) {
         this.recipientId = Optional.ofNullable(recipientId);
         this.actorId = Optional.ofNullable(actorId);
         this.isRead = Optional.ofNullable(isRead);
@@ -47,5 +54,7 @@ public class NotificationFilterOptions {
         this.createdBefore = Optional.ofNullable(createdBefore);
         this.sortBy = Optional.ofNullable(sortBy);
         this.sortOrder = Optional.ofNullable(sortOrder);
+        this.page = page;
+        this.size = size;
     }
 }

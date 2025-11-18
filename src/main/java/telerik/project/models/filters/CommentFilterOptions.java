@@ -14,6 +14,9 @@ public class CommentFilterOptions {
     private final Optional<String> sortBy;
     private final Optional<String> sortOrder;
 
+    private final Integer page;
+    private final Integer size;
+
     public CommentFilterOptions() {
         this.postId = Optional.empty();
         this.authorId = Optional.empty();
@@ -21,6 +24,8 @@ public class CommentFilterOptions {
         this.isDeleted = Optional.empty();
         this.sortBy = Optional.empty();
         this.sortOrder = Optional.empty();
+        this.page = null;
+        this.size = null;
     }
 
     public CommentFilterOptions(
@@ -29,12 +34,16 @@ public class CommentFilterOptions {
             Long parentCommentId,
             Boolean isDeleted,
             String sortBy,
-            String sortOrder) {
+            String sortOrder,
+            Integer page,
+            Integer size) {
         this.postId = Optional.ofNullable(postId);
         this.authorId = Optional.ofNullable(authorId);
         this.parentCommentId = Optional.ofNullable(parentCommentId);
         this.isDeleted = Optional.ofNullable(isDeleted);
         this.sortBy = Optional.ofNullable(sortBy);
         this.sortOrder = Optional.ofNullable(sortOrder);
+        this.page = page;
+        this.size = size;
     }
 }

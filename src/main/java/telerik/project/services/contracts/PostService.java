@@ -22,6 +22,8 @@ public interface PostService {
 
     void unlikePost(Long postId, User user);
 
+    boolean isLiked(Post post, User user);
+
     long countByAuthor(Long authorId);
 
     List<Post> getByAuthorId(Long authorId);

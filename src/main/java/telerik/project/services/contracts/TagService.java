@@ -1,6 +1,7 @@
 package telerik.project.services.contracts;
 
 import telerik.project.models.Tag;
+import telerik.project.models.User;
 
 import java.util.List;
 
@@ -16,5 +17,5 @@ public interface TagService {
 
     void update(Long id, Tag updatedTag);
 
-    void delete(Long id);
+    void delete(Long id, User actingUser);
 }

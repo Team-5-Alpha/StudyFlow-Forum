@@ -22,6 +22,8 @@ public interface CommentService {
 
     void unlikeComment(Long commentId, User user);
 
+    boolean isLiked(Comment comment, User user);
+
     List<Comment> getReplies(Long parentCommentId);
 
     long countByPostId(Long postId);
