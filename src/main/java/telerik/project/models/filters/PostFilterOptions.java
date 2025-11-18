@@ -14,6 +14,9 @@ public class PostFilterOptions {
     private final Optional<String> sortBy;
     private final Optional<String> sortOrder;
 
+    private final Integer page;
+    private final Integer size;
+
     public PostFilterOptions() {
         this.title = Optional.empty();
         this.contentKeyword = Optional.empty();
@@ -22,6 +25,8 @@ public class PostFilterOptions {
         this.isDeleted = Optional.empty();
         this.sortBy = Optional.empty();
         this.sortOrder = Optional.empty();
+        this.page = null;
+        this.size = null;
     }
 
     public PostFilterOptions(String title,
@@ -30,7 +35,9 @@ public class PostFilterOptions {
                              String tag,
                              Boolean isDeleted,
                              String sortBy,
-                             String sortOrder) {
+                             String sortOrder,
+                             Integer page,
+                             Integer size) {
         this.title = Optional.ofNullable(title);
         this.contentKeyword = Optional.ofNullable(contentKeyword);
         this.authorId = Optional.ofNullable(authorId);
@@ -38,5 +45,7 @@ public class PostFilterOptions {
         this.isDeleted = Optional.ofNullable(isDeleted);
         this.sortBy = Optional.ofNullable(sortBy);
         this.sortOrder = Optional.ofNullable(sortOrder);
+        this.page = page;
+        this.size = size;
     }
 }

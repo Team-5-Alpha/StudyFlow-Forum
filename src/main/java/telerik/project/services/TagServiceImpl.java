@@ -4,7 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import telerik.project.exceptions.EntityDuplicateException;
 import telerik.project.exceptions.EntityNotFoundException;
+import telerik.project.helpers.AuthorizationHelper;
 import telerik.project.models.Tag;
+import telerik.project.models.User;
 import telerik.project.repositories.TagRepository;
 import telerik.project.services.contracts.TagService;
 
@@ -61,7 +63,8 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
-    public void delete(Long id) {
+    public void delete(Long id, User actingUser) {
+        AuthorizationHelper.validateAdmin(actingUser);
         tagRepository.delete(getById(id));
     }
 }

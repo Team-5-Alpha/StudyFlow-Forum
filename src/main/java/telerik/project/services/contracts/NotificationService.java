@@ -12,8 +12,6 @@ public interface NotificationService {
 
     Notification getById(Long id);
 
-    void create(Notification notification);
-
     void delete(Long id, Long userId);
 
     void markAsRead(Long id, Long userId);
