@@ -5,24 +5,18 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Set;
 
 @Getter
 @Setter
 @NoArgsConstructor
-public class PostResponseDTO {
+public class AdminUserResponseDTO {
     private Long id;
-
-    private String title;
-    private String content;
-
+    private String username;
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String profilePhotoURL;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-
-    private UserSummaryDTO author;
-
-    private List<CommentResponseDTO> comments;
-    private int likesCount;
-    private Set<String> tags;
+    private boolean isBlocked;
 }

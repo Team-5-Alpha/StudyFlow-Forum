@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class TagResponseDTO {
+public class UserSummaryDTO {
     private Long id;
-    private String name;
+    private String username;
 }
