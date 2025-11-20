@@ -1,12 +1,14 @@
 package telerik.project.models.dtos.response;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Getter
 @Setter
+@NoArgsConstructor
 public class CommentResponseDTO {
 
     private Long id;
@@ -14,18 +16,11 @@ public class CommentResponseDTO {
     private String content;
 
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
 
-    private Boolean isDeleted;
-
-    private Long authorId;
-
-    private String authorUsername;
-
-    private Long postId;
+    private UserSummaryDTO author;
 
     private Long parentCommentId;
 
-    private long likeCount;
+    private int likeCount;
 }
