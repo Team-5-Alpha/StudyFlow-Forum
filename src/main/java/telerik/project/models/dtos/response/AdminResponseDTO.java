@@ -4,19 +4,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @NoArgsConstructor
-public class AdminResponseDTO {
-    private Long id;
-    private String username;
-    private String firstName;
-    private String lastName;
-    private String email;
+public class AdminResponseDTO extends UserResponseDTO{
     private String phoneNumber;
-    private String profilePhotoURL;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
 }

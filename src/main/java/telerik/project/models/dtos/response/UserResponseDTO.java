@@ -11,11 +11,14 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class UserResponseDTO {
     private Long id;
+
     private String username;
     private String firstName;
     private String lastName;
+
     private String email;
     private String profilePhotoURL;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
