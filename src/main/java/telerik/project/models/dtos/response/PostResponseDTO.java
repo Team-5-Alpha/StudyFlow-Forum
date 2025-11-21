@@ -22,7 +22,6 @@ public class PostResponseDTO {
 
     private UserSummaryDTO author;
 
-    private List<CommentResponseDTO> comments;
     private int likesCount;
     private Set<String> tags;
 }
