@@ -100,6 +100,9 @@ public class UserServiceImpl implements UserService {
         existing.setFirstName(updatedUser.getFirstName());
         existing.setLastName(updatedUser.getLastName());
         existing.setEmail(normalizedEmail);
+
+        existing.setPhoneNumber(updatedUser.getPhoneNumber());
+
         existing.setPassword(updatedUser.getPassword()); //Todo: Security change later
         existing.setProfilePhotoURL(updatedUser.getProfilePhotoURL());
 

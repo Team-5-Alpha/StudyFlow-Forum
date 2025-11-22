@@ -8,8 +8,9 @@ import java.util.Optional;
 @Getter
 public class UserFilterOptions {
     private final Optional<String> username;
-    private final Optional<String> email;
     private final Optional<String> firstName;
+    private final Optional<String> lastName;
+    private final Optional<String> email;
     private final Optional<Boolean> isBlocked;
     private final Optional<String> sortBy;
     private final Optional<String> sortOrder;
@@ -19,8 +20,9 @@ public class UserFilterOptions {
 
     public UserFilterOptions() {
         this.username = Optional.empty();
-        this.email = Optional.empty();
         this.firstName = Optional.empty();
+        this.lastName = Optional.empty();
+        this.email = Optional.empty();
         this.isBlocked = Optional.empty();
         this.sortBy = Optional.empty();
         this.sortOrder = Optional.empty();
@@ -29,16 +31,18 @@ public class UserFilterOptions {
     }
 
     public UserFilterOptions(String username,
-                             String email,
                              String firstName,
+                             String lastName,
+                             String email,
                              Boolean isBlocked,
                              String sortBy,
                              String sortOrder,
                              Integer page,
                              Integer size) {
         this.username = Optional.ofNullable(username);
-        this.email = Optional.ofNullable(email);
         this.firstName = Optional.ofNullable(firstName);
+        this.lastName = Optional.ofNullable(lastName);
+        this.email = Optional.ofNullable(email);
         this.isBlocked = Optional.ofNullable(isBlocked);
         this.sortBy = Optional.ofNullable(sortBy);
         this.sortOrder = Optional.ofNullable(sortOrder);
