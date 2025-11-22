@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/tags")
 @RequiredArgsConstructor
 public class TagRestController {
 
@@ -22,25 +22,25 @@ public class TagRestController {
     private final TagMapper tagMapper;
     private final UserService userService;
 
-    @GetMapping("/tags")
+    @GetMapping
     public List<TagResponseDTO> getAllTags() {
         return tagService.getAll().stream()
                 .map(tagMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    @GetMapping("/tags/{id}")
+    @GetMapping("/{id}")
     public TagResponseDTO getTagById(@PathVariable Long id) {
         return tagMapper.toResponse(tagService.getById(id));
     }
 
-    @PostMapping("/tags")
+    @PostMapping
     public TagResponseDTO createTag(@Valid @RequestBody Tag tag) {
         Tag created = tagService.createIfNotExists(tag.getName());
         return tagMapper.toResponse(created);
     }
 
-    @DeleteMapping("/tags/{id}")
+    @DeleteMapping("/{id}")
     public void deleteTag(@RequestParam Long actingUserId,
                           @PathVariable Long id) {
         User actingUser = userService.getById(actingUserId);
