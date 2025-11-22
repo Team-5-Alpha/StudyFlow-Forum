@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/comments")
 @RequiredArgsConstructor
 public class CommentRestController {
 
@@ -27,7 +27,7 @@ public class CommentRestController {
     private final CommentMapper commentMapper;
     private final UserService userService;
     
-    @GetMapping("/comments")
+    @GetMapping
     public List<CommentResponseDTO> getComments(
             @RequestParam(required = false) Long postId,
             @RequestParam(required = false) Long authorId,
@@ -46,13 +46,13 @@ public class CommentRestController {
                 .collect(Collectors.toList());
     }
 
-    @GetMapping("/comments/{id}")
+    @GetMapping("/{id}")
     public CommentResponseDTO getCommentById(@PathVariable Long id) {
         Comment comment = commentService.getById(id);
         return commentMapper.toResponse(comment);
     }
 
-    @PostMapping("/comments")
+    @PostMapping
     public CommentResponseDTO createComment(@RequestParam Long actingUserId,
                                             @Valid @RequestBody CommentCreateDTO dto) {
         User user = userService.getById(actingUserId);
@@ -75,7 +75,7 @@ public class CommentRestController {
         return commentMapper.toResponse(comment);
     }
 
-    @PutMapping("/comments/{id}")
+    @PutMapping("/{id}")
     public CommentResponseDTO updateComment(@RequestParam Long actingUserId,
                                             @PathVariable Long id,
                                             @Valid @RequestBody CommentUpdateDTO dto) {
@@ -94,35 +94,21 @@ public class CommentRestController {
         commentService.delete(id, user);
     }
 
-    @PostMapping("/comments/{id}/like")
+    @PostMapping("/{id}/like")
     public void likeComment(@RequestParam Long actingUserId,
                             @PathVariable Long id) {
         User user = userService.getById(actingUserId);
         commentService.likeComment(id, user);
     }
 
-    @DeleteMapping("/comments/{id}/unlike")
+    @DeleteMapping("/{id}/unlike")
     public void unlikeComment(@RequestParam Long actingUserId,
                               @PathVariable Long id) {
         User user = userService.getById(actingUserId);
         commentService.unlikeComment(id, user);
     }
 
-    @GetMapping("/posts/{postId}/comments")
-    public List<CommentResponseDTO> getCommentsForPost(
-            @PathVariable Long postId,
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(defaultValue = "10") Integer size) {
-
-        CommentFilterOptions filterOptions = new CommentFilterOptions(
-                postId, null, null, null, null, null, page, size);
-
-        return commentService.getAll(filterOptions).stream()
-                .map(commentMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    @GetMapping("/comments/{id}/replies")
+    @GetMapping("/{id}/replies")
     public List<CommentResponseDTO> getReplies(@PathVariable Long id) {
         return commentService.getReplies(id).stream()
                 .map(commentMapper::toResponse)

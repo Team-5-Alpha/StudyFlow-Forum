@@ -1,6 +1,7 @@
 package telerik.project.services;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import telerik.project.exceptions.EntityNotFoundException;
@@ -31,47 +32,53 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Notification> getAllForUser(Long userId, NotificationFilterOptions filterOptions) {
-        userRepository.findById(userId).orElseThrow(() -> new EntityNotFoundException("User", userId));
+    public List<Notification> getAll(Long actingUserId, NotificationFilterOptions filterOptions) {
+        User actingUser = getUserById(actingUserId);
+        AuthorizationHelper.validateNotBlocked(actingUser);
 
         Pageable pageable = PaginationUtils.createPageable(
                 filterOptions.getPage(),
-                filterOptions.getPage(),
+                filterOptions.getSize(),
                 NotificationSpecifications.buildSort(filterOptions)
         );
 
+        Specification<Notification> recipientSpec = (root, query, cb) ->
+                cb.equal(root.get("recipient").get("id"), actingUserId);
+
+        Specification<Notification> combined =
+                recipientSpec.and(NotificationSpecifications.withFilters(filterOptions));
+
         return notificationRepository
-                .findAll(NotificationSpecifications.withFilters(filterOptions), pageable)
+                .findAll(combined, pageable)
                 .getContent();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Notification getById(Long id) {
-        return notificationRepository.findById(id)
+    public Notification getById(Long actingUserId, Long id) {
+        User actingUser = getUserById(actingUserId);
+        AuthorizationHelper.validateNotBlocked(actingUser);
+
+        Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Notification", id));
+
+        AuthorizationHelper.validateOwner(actingUser, notification.getRecipient());
+
+        return notification;
     }
 
     @Override
     @Transactional
-    public void delete(Long id, Long userId) {
-        AuthorizationHelper.validateNotBlocked(getUserById(userId));
-
-        Notification notification = getById(id);
-
-        AuthorizationHelper.validateOwnerOrAdmin(getUserById(userId), notification.getRecipient());
-
-        notificationRepository.delete(notification);
+    public void delete(Long actingUserId, Long id) {
+        notificationRepository.delete(getById(actingUserId, id));
     }
 
     @Override
     @Transactional
-    public void markAsRead(Long notificationId, Long userId) {
-        AuthorizationHelper.validateNotBlocked(getUserById(userId));
+    public void markAsRead(Long actingUserId, Long notificationId) {
+        AuthorizationHelper.validateNotBlocked(getUserById(actingUserId));
 
-        Notification notification = getById(notificationId);
-
-        AuthorizationHelper.validateOwner(getUserById(userId), notification.getRecipient());
+        Notification notification = getById(actingUserId, notificationId);
 
         notification.setIsRead(true);
         notificationRepository.save(notification);
@@ -79,13 +86,14 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public void markAllAsRead(Long userId) {
-        List<Notification> notifications = notificationRepository.findByRecipient_Id(userId);
+    public void markAllAsRead(Long actingUserId) {
+        User actingUser = getUserById(actingUserId);
+        AuthorizationHelper.validateNotBlocked(actingUser);
 
-        for (Notification notification : notifications) {
-            AuthorizationHelper.validateOwner(getUserById(userId), notification.getRecipient());
-            notification.setIsRead(true);
-        }
+        List<Notification> notifications =
+                notificationRepository.findByRecipient_IdAndIsReadFalse(actingUserId);
+
+        notifications.forEach(n -> n.setIsRead(true));
 
         notificationRepository.saveAll(notifications);
     }

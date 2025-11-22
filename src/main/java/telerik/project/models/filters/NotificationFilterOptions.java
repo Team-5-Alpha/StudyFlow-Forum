@@ -7,7 +7,6 @@ import java.util.Optional;
 
 @Getter
 public class NotificationFilterOptions {
-    private final Optional<Long> recipientId;
     private final Optional<Long> actorId;
     private final Optional<Boolean> isRead;
     private final Optional<String> entityType;
@@ -21,7 +20,6 @@ public class NotificationFilterOptions {
     private final Integer size;
 
     public NotificationFilterOptions() {
-        this.recipientId = Optional.empty();
         this.actorId = Optional.empty();
         this.isRead = Optional.empty();
         this.entityType = Optional.empty();
@@ -34,8 +32,7 @@ public class NotificationFilterOptions {
         this.size = null;
     }
 
-    public NotificationFilterOptions(Long recipientId,
-                                     Long actorId,
+    public NotificationFilterOptions(Long actorId,
                                      Boolean isRead,
                                      String entityType,
                                      String actionType,
@@ -45,7 +42,6 @@ public class NotificationFilterOptions {
                                      String sortOrder,
                                      Integer page,
                                      Integer size) {
-        this.recipientId = Optional.ofNullable(recipientId);
         this.actorId = Optional.ofNullable(actorId);
         this.isRead = Optional.ofNullable(isRead);
         this.entityType = Optional.ofNullable(entityType);
