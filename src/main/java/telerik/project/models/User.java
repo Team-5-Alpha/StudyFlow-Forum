@@ -106,6 +106,22 @@ public class User {
         return this.role == Role.USER;
     }
 
+    public boolean isBlocked() {
+        return Boolean.TRUE.equals(this.isBlocked);
+    }
+
+    public boolean follows(User other) {
+        return this.following.contains(other);
+    }
+
+    public boolean hasLiked(Post post) {
+        return this.likedPosts.contains(post);
+    }
+
+    public boolean hasLiked(Comment comment) {
+        return this.likedComments.contains(comment);
+    }
+
     @PrePersist
     public void onCreate() {
         createdAt = LocalDateTime.now();

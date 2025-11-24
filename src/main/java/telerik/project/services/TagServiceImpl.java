@@ -50,7 +50,9 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
-    public void update(Long id, Tag updatedTag) {
+    public void update(Long id, Tag updatedTag, User actingUser) {
+        AuthorizationHelper.validateAdmin(actingUser);
+
         Tag existing = getById(id);
 
         if(tagRepository.existsByNameIgnoreCase(updatedTag.getName())

@@ -2,11 +2,13 @@ package telerik.project.controllers.rest;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import telerik.project.helpers.mappers.TagMapper;
 import telerik.project.models.Tag;
 import telerik.project.models.User;
 import telerik.project.models.dtos.response.TagResponseDTO;
+import telerik.project.models.dtos.update.TagUpdateDTO;
 import telerik.project.services.contracts.TagService;
 import telerik.project.services.contracts.UserService;
 
@@ -35,14 +37,33 @@ public class TagRestController {
     }
 
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public TagResponseDTO createTag(@Valid @RequestBody Tag tag) {
         Tag created = tagService.createIfNotExists(tag.getName());
         return tagMapper.toResponse(created);
     }
 
+    @PutMapping("/{id}")
+    public TagResponseDTO update(
+            @RequestHeader("X-User-Id") Long actingUserId,
+            @PathVariable Long id,
+            @Valid @RequestBody TagUpdateDTO dto
+    ) {
+        User actingUser = userService.getById(actingUserId);
+        Tag updated = tagService.getById(id);
+
+        tagMapper.updateTag(updated, dto);
+        tagService.update(id, updated, actingUser);
+
+        return tagMapper.toResponse(tagService.getById(id));
+    }
+
     @DeleteMapping("/{id}")
-    public void deleteTag(@RequestParam Long actingUserId,
-                          @PathVariable Long id) {
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteTag(
+            @RequestHeader("X-User-Id") Long actingUserId,
+            @PathVariable Long id
+    ) {
         User actingUser = userService.getById(actingUserId);
         tagService.delete(id, actingUser);
     }

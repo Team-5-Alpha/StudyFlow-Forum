@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import telerik.project.exceptions.EntityNotFoundException;
 import telerik.project.helpers.AuthorizationHelper;
+import telerik.project.helpers.validators.ActionValidationHelper;
 import telerik.project.helpers.validators.CommentValidationHelper;
 import telerik.project.helpers.validators.PostValidationHelper;
 import telerik.project.models.Comment;
@@ -12,6 +13,7 @@ import telerik.project.models.Post;
 import telerik.project.models.User;
 import telerik.project.models.filters.CommentFilterOptions;
 import telerik.project.repositories.CommentRepository;
+import telerik.project.repositories.UserRepository;
 import telerik.project.repositories.specifications.CommentSpecifications;
 import telerik.project.services.contracts.CommentService;
 import telerik.project.services.contracts.NotificationService;
@@ -26,13 +28,16 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final PostService postService;
     private final NotificationService notificationService;
+    private final UserRepository userRepository;
 
     public CommentServiceImpl(CommentRepository commentRepository,
                               PostService postService,
-                              NotificationService notificationService) {
+                              NotificationService notificationService,
+                              UserRepository userRepository) {
         this.commentRepository = commentRepository;
         this.postService = postService;
         this.notificationService = notificationService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -46,7 +51,9 @@ public class CommentServiceImpl implements CommentService {
 
         return commentRepository
                 .findAll(CommentSpecifications.withFilters(filterOptions), pageable)
-                .getContent();
+                .getContent().stream()
+                .filter(c -> !c.isDeleted())
+                .toList();
     }
 
     @Override
@@ -56,7 +63,6 @@ public class CommentServiceImpl implements CommentService {
                 .orElseThrow(() -> new EntityNotFoundException("Comment", id));
 
         CommentValidationHelper.validateNotDeleted(comment);
-
         return comment;
     }
 
@@ -89,13 +95,12 @@ public class CommentServiceImpl implements CommentService {
         }
 
         commentRepository.save(comment);
-
         notificationService.send(
                 author,
                 post.getAuthor(),
                 postId,
                 "COMMENT",
-                "REPLY"
+                "CREATE"
         );
     }
 
@@ -105,9 +110,10 @@ public class CommentServiceImpl implements CommentService {
         AuthorizationHelper.validateNotBlocked(actingUser);
 
         Comment existing = getById(commentId);
+        CommentValidationHelper.validateNotDeleted(existing);
+        PostValidationHelper.validateNotDeleted(existing.getPost());
 
         AuthorizationHelper.validateOwner(actingUser, existing.getAuthor());
-
 
         existing.setContent(updatedComment.getContent());
         commentRepository.save(existing);
@@ -119,7 +125,7 @@ public class CommentServiceImpl implements CommentService {
         AuthorizationHelper.validateNotBlocked(actingUser);
 
         Comment comment = getById(commentId);
-
+        CommentValidationHelper.validateNotDeleted(comment);
         AuthorizationHelper.validateOwnerOrAdmin(actingUser, comment.getAuthor());
 
         comment.setIsDeleted(true);
@@ -138,44 +144,49 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public void likeComment(Long commentId, User user) {
+    public void likeComment(Long commentId, User actingUser) {
+        AuthorizationHelper.validateNotBlocked(actingUser);
+
         Comment comment = getById(commentId);
+        CommentValidationHelper.validateNotDeleted(comment);
+        ActionValidationHelper.validateCanLike(actingUser, comment);
 
-        if (!isLiked(comment, user)) {
-            comment.getLikedByUsers().add(user);
-            commentRepository.save(comment);
+        actingUser.getLikedComments().add(comment);
+        comment.getLikedByUsers().add(actingUser);
 
-            notificationService.send(
-                    user,
-                    comment.getAuthor(),
-                    commentId,
-                    "COMMENT",
-                    "LIKE"
-            );
-        }
+        userRepository.save(actingUser);
+
+        notificationService.send(
+                actingUser,
+                comment.getAuthor(),
+                commentId,
+                "COMMENT",
+                "LIKE"
+        );
     }
 
     @Override
     @Transactional
-    public void unlikeComment(Long commentId, User user) {
+    public void unlikeComment(Long commentId, User actingUser) {
+        AuthorizationHelper.validateNotBlocked(actingUser);
+
         Comment comment = getById(commentId);
+        CommentValidationHelper.validateNotDeleted(comment);
+        ActionValidationHelper.validateCanUnlike(actingUser, comment);
 
-        if (isLiked(comment, user)) {
-            comment.getLikedByUsers().remove(user);
-            commentRepository.save(comment);
-        }
-    }
+        actingUser.getLikedComments().remove(comment);
+        comment.getLikedByUsers().remove(actingUser);
 
-    @Override
-    @Transactional(readOnly = true)
-    public boolean isLiked(Comment comment, User user) {
-        return comment.getLikedByUsers().contains(user);
+        userRepository.save(actingUser);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Comment> getReplies(Long parentCommentId) {
-        return commentRepository.findByParentCommentId(parentCommentId);
+        List<Comment> replies = commentRepository.findByParentCommentId(parentCommentId);
+        return replies.stream()
+                .filter(c -> !c.isDeleted())
+                .toList();
     }
 
     @Override

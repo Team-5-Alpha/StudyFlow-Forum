@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import telerik.project.exceptions.EntityNotFoundException;
 import telerik.project.helpers.AuthorizationHelper;
+import telerik.project.helpers.validators.ActionValidationHelper;
 import telerik.project.helpers.validators.UserValidationHelper;
 import telerik.project.models.Post;
 import telerik.project.models.Role;
@@ -27,7 +28,11 @@ public class UserServiceImpl implements UserService {
     private final PostService postService;
     private final NotificationService notificationService;
 
-    public UserServiceImpl(UserRepository userRepository, PostService postService, NotificationService notificationService) {
+    public UserServiceImpl(
+            UserRepository userRepository,
+            PostService postService,
+            NotificationService notificationService
+    ) {
         this.userRepository = userRepository;
         this.postService = postService;
         this.notificationService = notificationService;
@@ -90,18 +95,18 @@ public class UserServiceImpl implements UserService {
         AuthorizationHelper.validateNotBlocked(actingUser);
 
         User existing = getById(userId);
-
         AuthorizationHelper.validateOwner(actingUser, existing);
 
         String normalizedEmail = NormalizationUtils.normalizationEmail(updatedUser.getEmail());
-
         UserValidationHelper.validateEmailAvailable(userRepository, normalizedEmail, existing.getEmail());
 
         existing.setFirstName(updatedUser.getFirstName());
         existing.setLastName(updatedUser.getLastName());
         existing.setEmail(normalizedEmail);
 
-        existing.setPhoneNumber(updatedUser.getPhoneNumber());
+        if (existing.isAdmin()) {
+            existing.setPhoneNumber(updatedUser.getPhoneNumber());
+        }
 
         existing.setPassword(updatedUser.getPassword()); //Todo: Security change later
         existing.setProfilePhotoURL(updatedUser.getProfilePhotoURL());
@@ -113,23 +118,8 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void delete(Long targetUserId, User actingUser) {
         User user = getById(targetUserId);
-
         AuthorizationHelper.validateOwnerOrAdmin(actingUser, user);
-
         userRepository.delete(user);
-    }
-
-    @Override
-    @Transactional
-    public void updatePhone(Long userId, String phoneNumber, User actingUser) {
-        AuthorizationHelper.validateNotBlocked(actingUser);
-        AuthorizationHelper.validateAdmin(actingUser);
-
-        User existing = getById(userId);
-
-        AuthorizationHelper.validateOwner(actingUser, existing);
-
-        existing.setPhoneNumber(phoneNumber.trim());
     }
 
     @Override
@@ -139,10 +129,18 @@ public class UserServiceImpl implements UserService {
         AuthorizationHelper.validateSelfOperationNotAllowed(actingUser, targetUserId);
 
         User target = getById(targetUserId);
+        ActionValidationHelper.validateCanBlock(target);
+
         target.setIsBlocked(true);
         userRepository.save(target);
 
-        notificationService.send(actingUser, target, targetUserId, "USER", "BLOCK");
+        notificationService.send(
+                actingUser,
+                target,
+                targetUserId,
+                "USER",
+                "BLOCK"
+        );
     }
 
     @Override
@@ -152,10 +150,18 @@ public class UserServiceImpl implements UserService {
         AuthorizationHelper.validateSelfOperationNotAllowed(actingUser, targetUserId);
 
         User target = getById(targetUserId);
+        ActionValidationHelper.validateCanUnblock(target);
+
         target.setIsBlocked(false);
         userRepository.save(target);
 
-        notificationService.send(actingUser, target, targetUserId, "USER", "UNBLOCK");
+        notificationService.send(
+                actingUser,
+                target,
+                targetUserId,
+                "USER",
+                "UNBLOCK"
+        );
     }
 
     @Override
@@ -165,10 +171,18 @@ public class UserServiceImpl implements UserService {
         AuthorizationHelper.validateSelfOperationNotAllowed(actingUser, targetUserId);
 
         User target = getById(targetUserId);
+        ActionValidationHelper.validateCanPromote(target);
+
         target.setRole(Role.ADMIN);
         userRepository.save(target);
 
-        notificationService.send(actingUser, target, targetUserId, "ADMIN", "PROMOTE");
+        notificationService.send(
+                actingUser,
+                target,
+                targetUserId,
+                "ADMIN",
+                "PROMOTE"
+        );
     }
 
     @Override
@@ -184,13 +198,18 @@ public class UserServiceImpl implements UserService {
         AuthorizationHelper.validateSelfOperationNotAllowed(actingUser, targetUserId);
 
         User target = getById(targetUserId);
+        ActionValidationHelper.validateCanFollow(actingUser, target);
 
-        if (!isFollowing(actingUser.getId(), targetUserId)) {
-            actingUser.getFollowing().add(target);
-            userRepository.save(actingUser);
+        actingUser.getFollowing().add(target);
+        userRepository.save(actingUser);
 
-            notificationService.send(actingUser, target, targetUserId, "USER", "FOLLOW");
-        }
+        notificationService.send(
+                actingUser,
+                target,
+                targetUserId,
+                "USER",
+                "FOLLOW"
+        );
     }
 
     @Override
@@ -200,29 +219,22 @@ public class UserServiceImpl implements UserService {
         AuthorizationHelper.validateSelfOperationNotAllowed(actingUser, targetUserId);
 
         User target = getById(targetUserId);
+        ActionValidationHelper.validateCanUnfollow(actingUser, target);
 
-        if (isFollowing(actingUser.getId(), targetUserId)) {
-            actingUser.getFollowing().remove(target);
-            userRepository.save(actingUser);
-        }
+        actingUser.getFollowing().remove(target);
+        userRepository.save(actingUser);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<User> getFollowers(Long userId) {
-        return getById(userId).getFollowers().stream().toList();
+        return List.copyOf(getById(userId).getFollowers());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<User> getFollowing(Long userId) {
-        return getById(userId).getFollowing().stream().toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public boolean isFollowing(Long userId, Long targetUserId) {
-        return getById(userId).getFollowing().contains(getById(targetUserId));
+        return List.copyOf(getById(userId).getFollowing());
     }
 
     @Override

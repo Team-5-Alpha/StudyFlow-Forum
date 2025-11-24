@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import telerik.project.exceptions.EntityNotFoundException;
 import telerik.project.helpers.AuthorizationHelper;
 import telerik.project.helpers.NotificationFactory;
+import telerik.project.helpers.validators.NotificationValidationHelper;
 import telerik.project.models.Notification;
 import telerik.project.models.User;
 import telerik.project.models.filters.NotificationFilterOptions;
@@ -25,7 +26,8 @@ public class NotificationServiceImpl implements NotificationService {
     private final UserRepository userRepository;
 
     public NotificationServiceImpl(NotificationRepository notificationRepository,
-                                   UserRepository userRepository) {
+                                   UserRepository userRepository
+    ) {
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
     }
@@ -48,9 +50,7 @@ public class NotificationServiceImpl implements NotificationService {
         Specification<Notification> combined =
                 recipientSpec.and(NotificationSpecifications.withFilters(filterOptions));
 
-        return notificationRepository
-                .findAll(combined, pageable)
-                .getContent();
+        return notificationRepository.findAll(combined, pageable).getContent();
     }
 
     @Override
@@ -70,15 +70,23 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public void delete(Long actingUserId, Long id) {
-        notificationRepository.delete(getById(actingUserId, id));
+        User actingUser = getUserById(actingUserId);
+        AuthorizationHelper.validateNotBlocked(actingUser);
+
+        Notification notification = getById(actingUserId, id);
+
+        notificationRepository.delete(notification);
     }
 
     @Override
     @Transactional
     public void markAsRead(Long actingUserId, Long notificationId) {
-        AuthorizationHelper.validateNotBlocked(getUserById(actingUserId));
+        User actingUser = getUserById(actingUserId);
+        AuthorizationHelper.validateNotBlocked(actingUser);
 
         Notification notification = getById(actingUserId, notificationId);
+
+        NotificationValidationHelper.validateNotAlreadyRead(notification);
 
         notification.setIsRead(true);
         notificationRepository.save(notification);
@@ -94,7 +102,6 @@ public class NotificationServiceImpl implements NotificationService {
                 notificationRepository.findByRecipient_IdAndIsReadFalse(actingUserId);
 
         notifications.forEach(n -> n.setIsRead(true));
-
         notificationRepository.saveAll(notifications);
     }
     

@@ -60,11 +60,25 @@ public class UserMapper {
     }
 
     private void fillBaseUpdate(UserUpdateDTO dto, User user) {
-        user.setFirstName(dto.getFirstName());
-        user.setLastName(dto.getLastName());
-        user.setEmail(dto.getEmail());
-        user.setPassword(dto.getPassword());
-        user.setProfilePhotoURL(dto.getProfilePhotoURL());
+        if (dto.getFirstName() != null && !dto.getFirstName().isBlank()) {
+            user.setFirstName(dto.getFirstName());
+        }
+
+        if (dto.getLastName() != null && !dto.getLastName().isBlank()) {
+            user.setLastName(dto.getLastName());
+        }
+
+        if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
+            user.setEmail(dto.getEmail());
+        }
+
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            user.setPassword(dto.getPassword());
+        }
+
+        if (dto.getProfilePhotoURL() != null && !dto.getProfilePhotoURL().isBlank()) {
+            user.setProfilePhotoURL(dto.getProfilePhotoURL());
+        }
     }
 
     private void fillBaseResponse(UserResponseDTO dto, User user) {
