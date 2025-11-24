@@ -20,10 +20,10 @@ public final class ValidationMessages {
             "Comment content must be between {min} and {max} symbols.";
 
     public final static String USERNAME_NOT_NULL_ERROR = "Username is required.";
-    public final static String FIRST_NAME_NOT_NULL_ERROR = "Username is required.";
-    public final static String LAST_NAME_NOT_NULL_ERROR = "Username is required.";
+    public final static String FIRST_NAME_NOT_NULL_ERROR = "First name is required.";
+    public final static String LAST_NAME_NOT_NULL_ERROR = "Last name is required.";
     public final static String EMAIL_NOT_NULL_ERROR = "Username is required.";
-    public final static String PASSWORD_NOT_NULL_ERROR = "Username is required.";
+    public final static String PASSWORD_NOT_NULL_ERROR = "Password is required.";
 
     public final static String EMAIL_INVALID_ERROR = "Email is invalid.";
     public final static String PROFILE_PHOTO_URL_ERROR = "Profile photo must be url.";

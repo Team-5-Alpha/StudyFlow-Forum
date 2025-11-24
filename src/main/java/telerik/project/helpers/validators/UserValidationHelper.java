@@ -8,7 +8,15 @@ public final class UserValidationHelper {
     private UserValidationHelper() {}
 
     public static void validateEmailAvailable(UserRepository repository, String newEmail, String oldEmail) {
-        if (!newEmail.equals(oldEmail) && repository.existsByEmail(newEmail)) {
+        if (newEmail == null || newEmail.isBlank()) {
+            return;
+        }
+
+        if (newEmail.equals(oldEmail)) {
+            return;
+        }
+
+        if (repository.existsByEmail(newEmail)) {
             throw new EntityDuplicateException("User", "email", newEmail);
         }
     }

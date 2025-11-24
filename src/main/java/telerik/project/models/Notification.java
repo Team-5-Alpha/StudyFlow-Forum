@@ -46,6 +46,18 @@ public class Notification {
     @JoinColumn(name = "actor_id")
     private User actor;
 
+    public boolean isRead() {
+        return Boolean.TRUE.equals(this.isRead);
+    }
+
+    public boolean isFor(User user) {
+        return this.recipient.equals(user);
+    }
+
+    public boolean isFrom(User user) {
+        return this.actor.equals(user);
+    }
+
     @PrePersist
     public void onCreate() {
         createdAt = LocalDateTime.now();

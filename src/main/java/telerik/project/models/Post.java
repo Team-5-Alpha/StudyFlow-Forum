@@ -60,6 +60,14 @@ public class Post {
     @ManyToMany(mappedBy = "likedPosts", fetch = FetchType.LAZY)
     private Set<User> likedByUsers = new HashSet<>();
 
+    public boolean isDeleted() {
+        return Boolean.TRUE.equals(this.isDeleted);
+    }
+
+    public boolean isLikedBy(User user) {
+        return this.likedByUsers.contains(user);
+    }
+
     @PrePersist
     public void onCreate() {
         createdAt = LocalDateTime.now();

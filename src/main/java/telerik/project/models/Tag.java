@@ -29,4 +29,8 @@ public class Tag {
 
     @ManyToMany(mappedBy = "tags", fetch = FetchType.LAZY)
     private Set<Post> posts = new HashSet<>();
+
+    public boolean isUsedIn(Post post) {
+        return this.posts.contains(post);
+    }
 }
