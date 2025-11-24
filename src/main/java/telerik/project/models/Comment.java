@@ -55,6 +55,18 @@ public class Comment {
     @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<Comment> replies = new HashSet<>();
 
+    public boolean isDeleted() {
+        return Boolean.TRUE.equals(this.isDeleted);
+    }
+
+    public boolean isLikedBy(User user) {
+        return this.likedByUsers.contains(user);
+    }
+
+    public boolean isReply() {
+        return this.parentComment != null;
+    }
+
     @PrePersist
     public void onCreate() {
         createdAt = LocalDateTime.now();

@@ -20,11 +20,14 @@ public class UserSpecifications {
             filterOptions.getUsername().ifPresent(username ->
                     predicates.add(usernameContains(username).toPredicate(root, query, cb)));
 
-            filterOptions.getEmail().ifPresent(email ->
-                    predicates.add(emailContains(email).toPredicate(root, query, cb)));
-
             filterOptions.getFirstName().ifPresent(firstName ->
                     predicates.add(firstNameContains(firstName).toPredicate(root, query, cb)));
+
+            filterOptions.getLastName().ifPresent(lastName ->
+                    predicates.add(lastNameContains(lastName).toPredicate(root, query, cb)));
+
+            filterOptions.getEmail().ifPresent(email ->
+                    predicates.add(emailContains(email).toPredicate(root, query, cb)));
 
             filterOptions.getIsBlocked().ifPresent(isBlocked ->
                     predicates.add(isBlockedEquals(isBlocked).toPredicate(root, query, cb)));
@@ -38,14 +41,19 @@ public class UserSpecifications {
                 cb.like(cb.lower(root.get("username")), "%" + username.toLowerCase() + "%");
     }
 
-    private static Specification<User> emailContains(String email) {
-        return (root, query, cb) ->
-                cb.like(cb.lower(root.get("email")), "%" + email.toLowerCase() + "%");
-    }
-
     private static Specification<User> firstNameContains(String firstName) {
         return (root, query, cb) ->
                 cb.like(cb.lower(root.get("firstName")), "%" + firstName.toLowerCase() + "%");
+    }
+
+    private static Specification<User> lastNameContains(String lastName) {
+        return (root, query, cb) ->
+                cb.like(cb.lower(root.get("lastName")), "%" + lastName.toLowerCase() + "%");
+    }
+
+    private static Specification<User> emailContains(String email) {
+        return (root, query, cb) ->
+                cb.like(cb.lower(root.get("email")), "%" + email.toLowerCase() + "%");
     }
 
     private static Specification<User> isBlockedEquals(Boolean isBlocked) {
@@ -64,7 +72,7 @@ public class UserSpecifications {
                 .map(order -> Sort.Direction.DESC).orElse(Sort.Direction.ASC);
 
         return switch (sortBy) {
-            case "username", "email", "firstName", "createdAt" -> Sort.by(direction, sortBy);
+            case "username", "firstName", "lastName", "email", "createdAt" -> Sort.by(direction, sortBy);
             default -> Sort.unsorted();
         };
     }

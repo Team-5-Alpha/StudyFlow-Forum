@@ -15,7 +15,7 @@ public interface TagService {
 
     Tag createIfNotExists(String name);
 
-    void update(Long id, Tag updatedTag);
+    void update(Long id, Tag updatedTag, User actingUser);
 
     void delete(Long id, User actingUser);
 }

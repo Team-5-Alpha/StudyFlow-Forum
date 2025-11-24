@@ -16,9 +16,6 @@ public class NotificationSpecifications {
         return (root, query, cb) -> {
             List<Predicate> predicate = new ArrayList<>();
 
-            filterOptions.getRecipientId().ifPresent(recipientId ->
-                    predicate.add(recipientIdEquals(recipientId).toPredicate(root, query, cb)));
-
             filterOptions.getActorId().ifPresent(actorId ->
                     predicate.add(actorIdEquals(actorId).toPredicate(root, query, cb)));
 
@@ -39,11 +36,6 @@ public class NotificationSpecifications {
 
             return cb.and(predicate.toArray(new Predicate[0]));
         };
-    }
-
-    private static Specification<Notification> recipientIdEquals(Long recipientId) {
-        return (root, query, cb) ->
-                cb.equal(root.get("recipient").get("id"), recipientId);
     }
 
     private static Specification<Notification> actorIdEquals(Long actorId) {

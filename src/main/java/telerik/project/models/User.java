@@ -25,14 +25,14 @@ public class User {
     @Column(name = "user_id")
     private Long id;
 
+    @Column(name = "username")
+    private String username;
+
     @Column(name = "first_name")
     private String firstName;
 
     @Column(name = "last_name")
     private String lastName;
-
-    @Column(name = "username")
-    private String username;
 
     @Column(name = "email")
     private String email;
@@ -104,6 +104,22 @@ public class User {
 
     public boolean isUser() {
         return this.role == Role.USER;
+    }
+
+    public boolean isBlocked() {
+        return Boolean.TRUE.equals(this.isBlocked);
+    }
+
+    public boolean follows(User other) {
+        return this.following.contains(other);
+    }
+
+    public boolean hasLiked(Post post) {
+        return this.likedPosts.contains(post);
+    }
+
+    public boolean hasLiked(Comment comment) {
+        return this.likedComments.contains(comment);
     }
 
     @PrePersist

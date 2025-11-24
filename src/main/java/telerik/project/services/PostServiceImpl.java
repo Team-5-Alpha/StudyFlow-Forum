@@ -6,12 +6,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import telerik.project.exceptions.EntityNotFoundException;
 import telerik.project.helpers.AuthorizationHelper;
+import telerik.project.helpers.validators.ActionValidationHelper;
 import telerik.project.helpers.validators.PostValidationHelper;
 import telerik.project.models.Post;
 import telerik.project.models.Tag;
 import telerik.project.models.User;
+import telerik.project.models.dtos.create.PostCreateDTO;
+import telerik.project.models.dtos.update.PostUpdateDTO;
 import telerik.project.models.filters.PostFilterOptions;
 import telerik.project.repositories.PostRepository;
+import telerik.project.repositories.UserRepository;
 import telerik.project.repositories.specifications.PostSpecifications;
 import telerik.project.services.contracts.NotificationService;
 import telerik.project.services.contracts.PostService;
@@ -29,13 +33,16 @@ public class PostServiceImpl implements PostService {
     private final PostRepository postRepository;
     private final TagService tagService;
     private final NotificationService notificationService;
+    private final UserRepository userRepository;
 
     public PostServiceImpl(PostRepository postRepository,
                            TagService tagService,
-                           NotificationService notificationService) {
+                           NotificationService notificationService,
+                           UserRepository userRepository) {
         this.postRepository = postRepository;
         this.tagService = tagService;
         this.notificationService = notificationService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -49,7 +56,9 @@ public class PostServiceImpl implements PostService {
 
         return postRepository
                 .findAll(PostSpecifications.withFilters(filterOptions), pageable)
-                .getContent();
+                .getContent().stream()
+                .filter(p -> !p.isDeleted())
+                .toList();
     }
 
     @Override
@@ -59,16 +68,27 @@ public class PostServiceImpl implements PostService {
                 .orElseThrow(() -> new EntityNotFoundException("Post", id));
 
         PostValidationHelper.validateNotDeleted(post);
-
         return post;
     }
 
     @Override
     @Transactional
-    public void create(Post post, User author) {
+    public Post create(PostCreateDTO dto, User author) {
         AuthorizationHelper.validateNotBlocked(author);
 
+        Post post = new Post();
         post.setAuthor(author);
+        post.setTitle(dto.getTitle());
+        post.setContent(dto.getContent());
+
+        if (dto.getTags() != null) {
+            Set<Tag> resolved = dto.getTags().stream()
+                    .map(NormalizationUtils::normalizeTagName)
+                    .map(tagService::createIfNotExists)
+                    .collect(Collectors.toSet());
+
+            post.setTags(resolved);
+        }
 
         postRepository.save(post);
 
@@ -81,25 +101,36 @@ public class PostServiceImpl implements PostService {
                         "CREATE"
                 )
         );
+
+        return post;
     }
 
     @Override
     @Transactional
-    public void update(Long postId, Post updatedPost, User actingUser) {
+    public void update(Long postId, PostUpdateDTO dto, User actingUser) {
         AuthorizationHelper.validateNotBlocked(actingUser);
 
         Post existing = getById(postId);
-
+        PostValidationHelper.validateNotDeleted(existing);
         AuthorizationHelper.validateOwner(actingUser, existing.getAuthor());
 
-        existing.setTitle(updatedPost.getTitle());
-        existing.setContent(updatedPost.getContent());
+        if (dto.getTitle() != null && !dto.getTitle().isBlank()) {
+            existing.setTitle(dto.getTitle());
+        }
 
-        Set<Tag> fixedTags = updatedPost.getTags().stream()
-                .map(t -> tagService.createIfNotExists(NormalizationUtils.normalizeTagName(t.getName())))
-                .collect(Collectors.toSet());
+        if (dto.getContent() != null && !dto.getContent().isBlank()) {
+            existing.setContent(dto.getContent());
+        }
 
-        existing.setTags(fixedTags);
+        if (dto.getTags() != null) {
+            Set<Tag> resolved = dto.getTags().stream()
+                    .map(NormalizationUtils::normalizeTagName)
+                    .map(tagService::createIfNotExists)
+                    .collect(Collectors.toSet());
+
+            existing.setTags(resolved);
+        }
+
         postRepository.save(existing);
     }
 
@@ -109,7 +140,7 @@ public class PostServiceImpl implements PostService {
         AuthorizationHelper.validateNotBlocked(actingUser);
 
         Post post = getById(postId);
-
+        PostValidationHelper.validateNotDeleted(post);
         AuthorizationHelper.validateOwnerOrAdmin(actingUser, post.getAuthor());
 
         post.setIsDeleted(true);
@@ -128,42 +159,40 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public void likePost(Long postId, User user) {
-        AuthorizationHelper.validateNotBlocked(user);
+    public void likePost(Long postId, User actingUser) {
+        AuthorizationHelper.validateNotBlocked(actingUser);
 
         Post post = getById(postId);
+        PostValidationHelper.validateNotDeleted(post);
+        ActionValidationHelper.validateCanLike(actingUser, post);
 
-        if (!isLiked(post, user)) {
-            post.getLikedByUsers().add(user);
-            postRepository.save(post);
+        actingUser.getLikedPosts().add(post);
+        post.getLikedByUsers().add(actingUser);
 
-            notificationService.send(
-                    user,
-                    post.getAuthor(),
-                    postId,
-                    "POST",
-                    "LIKE"
-            );
-        }
+        userRepository.save(actingUser);
+
+        notificationService.send(
+                actingUser,
+                post.getAuthor(),
+                postId,
+                "POST",
+                "LIKE"
+        );
     }
 
     @Override
     @Transactional
-    public void unlikePost(Long postId, User user) {
-        AuthorizationHelper.validateNotBlocked(user);
+    public void unlikePost(Long postId, User actingUser) {
+        AuthorizationHelper.validateNotBlocked(actingUser);
 
         Post post = getById(postId);
+        PostValidationHelper.validateNotDeleted(post);
+        ActionValidationHelper.validateCanUnlike(actingUser, post);
 
-        if (isLiked(post, user)) {
-            post.getLikedByUsers().remove(user);
-            postRepository.save(post);
-        }
-    }
+        actingUser.getLikedPosts().remove(post);
+        post.getLikedByUsers().remove(actingUser);
 
-    @Override
-    @Transactional(readOnly = true)
-    public boolean isLiked(Post post, User user) {
-        return post.getLikedByUsers().contains(user);
+        userRepository.save(actingUser);
     }
 
     @Override
@@ -175,16 +204,18 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional(readOnly = true)
     public List<Post> getByAuthorId(Long authorId) {
-        return postRepository.findByAuthor_Id(authorId);
+        return postRepository.findByAuthor_Id(authorId).stream()
+                .filter(p -> !p.isDeleted())
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<Post> getMostRecent() {
         return postRepository.findAll(
-                Sort.by(Sort.Direction.DESC, "createdAt")
+                        Sort.by(Sort.Direction.DESC, "createdAt")
                 ).stream()
-                .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
+                .filter(p -> !p.isDeleted())
                 .limit(10)
                 .toList();
     }
@@ -194,7 +225,7 @@ public class PostServiceImpl implements PostService {
     public List<Post> getMostCommented() {
         return postRepository.findMostCommented()
                 .stream()
-                .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
+                .filter(p -> !p.isDeleted())
                 .limit(10)
                 .toList();
     }
@@ -204,7 +235,7 @@ public class PostServiceImpl implements PostService {
     public List<Post> getByTags(List<String> tags) {
         return tags.stream()
                 .flatMap(t -> postRepository.findByTags_Name(t).stream())
-                .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
+                .filter(p -> !p.isDeleted())
                 .distinct()
                 .toList();
     }
@@ -214,7 +245,7 @@ public class PostServiceImpl implements PostService {
     public List<Post> getLikedPosts(Long userId) {
         return postRepository.findByLikedByUsers_Id(userId)
                 .stream()
-                .filter(p -> !Boolean.TRUE.equals(p.getIsDeleted()))
+                .filter(p -> !p.isDeleted())
                 .toList();
     }
 }

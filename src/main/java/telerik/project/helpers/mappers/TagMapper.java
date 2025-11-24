@@ -3,6 +3,7 @@ package telerik.project.helpers.mappers;
 import org.springframework.stereotype.Component;
 import telerik.project.models.Tag;
 import telerik.project.models.dtos.response.TagResponseDTO;
+import telerik.project.models.dtos.update.TagUpdateDTO;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -15,6 +16,10 @@ public class TagMapper {
         dto.setId(tag.getId());
         dto.setName(tag.getName());
         return dto;
+    }
+
+    public void updateTag(Tag tag, TagUpdateDTO dto) {
+        tag.setName(dto.getName());
     }
 
     public Set<String> toNameSet(Set<Tag> tags) {

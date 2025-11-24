@@ -7,6 +7,7 @@ import telerik.project.models.filters.UserFilterOptions;
 import java.util.List;
 
 public interface UserService {
+
     List<User> getAll(UserFilterOptions filterOptions);
 
     User getById(Long id);
@@ -21,15 +22,13 @@ public interface UserService {
 
     void delete(Long id, User actingUser);
 
-    void updatePhone(Long userId, String phoneNumber, User actingUser);
-
     void blockUser(Long id, User actingUser);
 
     void unblockUser(Long id, User actingUser);
 
     void promoteToAdmin(Long id, User actingUser);
 
-    public List<Post> getPostsByUser(Long userId);
+    List<Post> getPostsByUser(Long userId);
 
     void followUser(Long targetUserId, User actingUser);
 
@@ -38,8 +37,6 @@ public interface UserService {
     List<User> getFollowers(Long userId);
 
     List<User> getFollowing(Long userId);
-
-    boolean isFollowing(Long userId, Long targetUserId);
 
     long countFollowers(Long userId);
 
