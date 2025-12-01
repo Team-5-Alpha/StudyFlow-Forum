@@ -1,17 +1,17 @@
-package telerik.project.models.dtos.create;
+package telerik.project.models.dtos.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 import telerik.project.models.dtos.ValidationMessages;
 
 @Getter
 @Setter
-@NoArgsConstructor
-public class UserCreateDTO {
+@AllArgsConstructor
+public class RegisterRequestDTO {
     @NotBlank(message = ValidationMessages.USERNAME_NOT_NULL_ERROR)
     @Size(min = 4, max = 32, message = ValidationMessages.USERNAME_LENGTH_ERROR)
     private String username;

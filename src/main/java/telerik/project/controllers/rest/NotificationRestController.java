@@ -2,6 +2,7 @@ package telerik.project.controllers.rest;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import telerik.project.helpers.mappers.NotificationMapper;
 import telerik.project.models.dtos.response.NotificationResponseDTO;
@@ -19,9 +20,9 @@ public class NotificationRestController {
     private final NotificationService notificationService;
     private final NotificationMapper notificationMapper;
 
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
     public List<NotificationResponseDTO> getAll(
-            @RequestHeader("X-User-Id") Long actingUserId,
             @RequestParam(required = false) Long actorId,
             @RequestParam(required = false) Boolean isRead,
             @RequestParam(required = false) String entityType,
@@ -38,40 +39,35 @@ public class NotificationRestController {
                 sortBy, sortOrder, page, size
         );
 
-        return notificationService.getAll(actingUserId, filterOptions).stream()
+        return notificationService.getAll(filterOptions).stream()
                 .map(notificationMapper::toResponse)
                 .toList();
     }
 
-    @GetMapping("/{id}")
-    public NotificationResponseDTO getById(
-            @RequestHeader("X-User-Id") Long actingUserId,
-            @PathVariable Long id
-    ) {
-        return notificationMapper.toResponse(notificationService.getById(actingUserId, id));
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping("/{targetNotificationId}")
+    public NotificationResponseDTO getById(@PathVariable Long targetNotificationId) {
+        return notificationMapper.toResponse(notificationService.getById(targetNotificationId));
     }
 
-    @PutMapping("/{id}/read")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PutMapping("/{targetNotificationId}/read")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void markAsRead(
-            @RequestHeader("X-User-Id") Long actingUserId,
-            @PathVariable Long id
-    ) {
-        notificationService.markAsRead(actingUserId, id);
+    public void markAsRead(@PathVariable Long targetNotificationId) {
+        notificationService.markAsRead(targetNotificationId);
     }
 
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PutMapping("/read-all")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void markAsRead(@RequestHeader("X-User-Id") Long actingUserId) {
-        notificationService.markAllAsRead(actingUserId);
+    public void markAsRead() {
+        notificationService.markAllAsRead();
     }
 
-    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @DeleteMapping("/{targetNotificationId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
-            @RequestHeader("X-User-Id") Long actingUserId,
-            @PathVariable Long id
-    ) {
-        notificationService.delete(actingUserId, id);
+    public void delete(@PathVariable Long targetNotificationId) {
+        notificationService.delete(targetNotificationId);
     }
 }

@@ -8,15 +8,15 @@ import java.util.List;
 
 public interface NotificationService {
 
-    List<Notification> getAll(Long actingUserId, NotificationFilterOptions filterOptions);
+    List<Notification> getAll(NotificationFilterOptions filterOptions);
 
-    Notification getById(Long actingUserId, Long id);
+    Notification getById(Long targetNotificationId);
 
-    void delete(Long actingUserId, Long id);
+    void delete(Long targetNotificationId);
 
-    void markAsRead(Long actingUserId, Long id);
+    void markAsRead(Long targetNotificationId);
 
-    void markAllAsRead(Long actingUserId);
+    void markAllAsRead();
 
-    void send(User actor, User recipient, Long entityId, String entityType, String actionType);
+    void send(User recipient, Long entityId, String entityType, String actionType);
 }
