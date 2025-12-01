@@ -4,7 +4,7 @@ public final class NormalizationUtils {
 
     private NormalizationUtils() {}
 
-    public static String normalizationKeyword(String input) {
+    public static String normalizeKeyword(String input) {
         return StringUtils.safeLower(input);
     }
 
@@ -12,11 +12,11 @@ public final class NormalizationUtils {
         return StringUtils.safeLower(tag);
     }
 
-    public static String normalizationEmail(String email) {
+    public static String normalizeEmail(String email) {
         return StringUtils.safeLower(email);
     }
 
-    public static String normalizationUsername(String username) {
+    public static String normalizeUsername(String username) {
         return StringUtils.safeLower(username);
     }
 }

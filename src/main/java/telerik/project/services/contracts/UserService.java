@@ -10,7 +10,7 @@ public interface UserService {
 
     List<User> getAll(UserFilterOptions filterOptions);
 
-    User getById(Long id);
+    User getById(Long targetUserId);
 
     User getByUsername(String username);
 
@@ -18,27 +18,27 @@ public interface UserService {
 
     void create(User user);
 
-    void update(Long id, User updatedUser, User actingUser);
+    void update(Long targetUserId, User updatedUser);
 
-    void delete(Long id, User actingUser);
+    void delete(Long targetUserId);
 
-    void blockUser(Long id, User actingUser);
+    void blockUser(Long targetUserId);
 
-    void unblockUser(Long id, User actingUser);
+    void unblockUser(Long targetUserId);
 
-    void promoteToAdmin(Long id, User actingUser);
+    void promoteToAdmin(Long targetUserId);
 
-    List<Post> getPostsByUser(Long userId);
+    List<Post> getPostsByUser(Long targetUserId);
 
-    void followUser(Long targetUserId, User actingUser);
+    void followUser(Long targetUserId);
 
-    void unfollowUser(Long targetUserId, User actingUser);
+    void unfollowUser(Long targetUserId);
 
-    List<User> getFollowers(Long userId);
+    List<User> getFollowers(Long targetUserId);
 
-    List<User> getFollowing(Long userId);
+    List<User> getFollowing(Long targetUserId);
 
-    long countFollowers(Long userId);
+    long countFollowers(Long targetUserId);
 
-    long countFollowing(Long userId);
+    long countFollowing(Long targetUserId);
 }

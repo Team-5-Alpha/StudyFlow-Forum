@@ -6,7 +6,6 @@ import telerik.project.exceptions.EntityDuplicateException;
 import telerik.project.exceptions.EntityNotFoundException;
 import telerik.project.helpers.AuthorizationHelper;
 import telerik.project.models.Tag;
-import telerik.project.models.User;
 import telerik.project.repositories.TagRepository;
 import telerik.project.services.contracts.TagService;
 
@@ -28,9 +27,9 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
-    public Tag getById(Long id) {
-        return tagRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Tag", id));
+    public Tag getById(Long targetTagId) {
+        return tagRepository.findById(targetTagId)
+                .orElseThrow(() -> new EntityNotFoundException("Tag", targetTagId));
     }
 
     @Override
@@ -50,10 +49,10 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
-    public void update(Long id, Tag updatedTag, User actingUser) {
-        AuthorizationHelper.validateAdmin(actingUser);
+    public void update(Long targetTagId, Tag updatedTag) {
+        AuthorizationHelper.validateAdmin();
 
-        Tag existing = getById(id);
+        Tag existing = getById(targetTagId);
 
         if(tagRepository.existsByNameIgnoreCase(updatedTag.getName())
                 && !existing.getName().equalsIgnoreCase(updatedTag.getName())) {
@@ -65,8 +64,8 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
-    public void delete(Long id, User actingUser) {
-        AuthorizationHelper.validateAdmin(actingUser);
-        tagRepository.delete(getById(id));
+    public void delete(Long targetTagId) {
+        AuthorizationHelper.validateAdmin();
+        tagRepository.delete(getById(targetTagId));
     }
 }

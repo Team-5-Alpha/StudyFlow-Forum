@@ -15,6 +15,7 @@ import telerik.project.models.filters.CommentFilterOptions;
 import telerik.project.repositories.CommentRepository;
 import telerik.project.repositories.UserRepository;
 import telerik.project.repositories.specifications.CommentSpecifications;
+import telerik.project.security.auth.SecurityContextUtil;
 import telerik.project.services.contracts.CommentService;
 import telerik.project.services.contracts.NotificationService;
 import telerik.project.services.contracts.PostService;
@@ -58,35 +59,35 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional(readOnly = true)
-    public Comment getById(Long id) {
-        Comment comment = commentRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Comment", id));
+    public Comment getById(Long targetCommentId) {
+        Comment targetComment = commentRepository.findById(targetCommentId)
+                .orElseThrow(() -> new EntityNotFoundException("Comment", targetCommentId));
 
-        CommentValidationHelper.validateNotDeleted(comment);
-        return comment;
+        CommentValidationHelper.validateNotDeleted(targetComment);
+        return targetComment;
     }
 
     @Override
     @Transactional
-    public void create(Comment comment, Long postId, User author) {
-        AuthorizationHelper.validateNotBlocked(author);
+    public void create(Comment comment, Long targetPostId) {
+        User actingUser = SecurityContextUtil.getCurrentUser();
+        AuthorizationHelper.validateNotBlocked();
 
-        Post post = postService.getById(postId);
+        Post post = postService.getById(targetPostId);
         PostValidationHelper.validateNotDeleted(post);
 
         comment.setPost(post);
-        comment.setAuthor(author);
+        comment.setAuthor(actingUser);
 
         if (comment.getParentComment() != null) {
             Comment parent = getById(comment.getParentComment().getId());
 
             CommentValidationHelper.validateParentNotDeleted(parent);
-            CommentValidationHelper.validateReplySamePost(parent, postId);
+            CommentValidationHelper.validateReplySamePost(parent, targetPostId);
 
             comment.setParentComment(parent);
 
             notificationService.send(
-                    author,
                     parent.getAuthor(),
                     parent.getId(),
                     "COMMENT",
@@ -96,9 +97,8 @@ public class CommentServiceImpl implements CommentService {
 
         commentRepository.save(comment);
         notificationService.send(
-                author,
                 post.getAuthor(),
-                postId,
+                targetPostId,
                 "COMMENT",
                 "CREATE"
         );
@@ -106,14 +106,14 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public void update(Long commentId, Comment updatedComment, User actingUser) {
-        AuthorizationHelper.validateNotBlocked(actingUser);
+    public void update(Long targetCommentId, Comment updatedComment) {
+        AuthorizationHelper.validateNotBlocked();
 
-        Comment existing = getById(commentId);
+        Comment existing = getById(targetCommentId);
         CommentValidationHelper.validateNotDeleted(existing);
         PostValidationHelper.validateNotDeleted(existing.getPost());
 
-        AuthorizationHelper.validateOwner(actingUser, existing.getAuthor());
+        AuthorizationHelper.validateOwner(existing.getAuthor());
 
         existing.setContent(updatedComment.getContent());
         commentRepository.save(existing);
@@ -121,21 +121,21 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public void delete(Long commentId, User actingUser) {
-        AuthorizationHelper.validateNotBlocked(actingUser);
+    public void delete(Long targetCommentId) {
+        User actingUser = SecurityContextUtil.getCurrentUser();
+        AuthorizationHelper.validateNotBlocked();
 
-        Comment comment = getById(commentId);
-        CommentValidationHelper.validateNotDeleted(comment);
-        AuthorizationHelper.validateOwnerOrAdmin(actingUser, comment.getAuthor());
+        Comment targetComment = getById(targetCommentId);
+        CommentValidationHelper.validateNotDeleted(targetComment);
+        AuthorizationHelper.validateOwnerOrAdmin(targetComment.getAuthor());
 
-        comment.setIsDeleted(true);
-        commentRepository.save(comment);
+        targetComment.setIsDeleted(true);
+        commentRepository.save(targetComment);
 
         if (actingUser.isAdmin()) {
             notificationService.send(
-                    actingUser,
-                    comment.getAuthor(),
-                    commentId,
+                    targetComment.getAuthor(),
+                    targetCommentId,
                     "COMMENT",
                     "DELETED"
             );
@@ -144,22 +144,22 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public void likeComment(Long commentId, User actingUser) {
-        AuthorizationHelper.validateNotBlocked(actingUser);
+    public void likeComment(Long targetCommentId) {
+        User actingUser = SecurityContextUtil.getCurrentUser();
+        AuthorizationHelper.validateNotBlocked();
 
-        Comment comment = getById(commentId);
-        CommentValidationHelper.validateNotDeleted(comment);
-        ActionValidationHelper.validateCanLike(actingUser, comment);
+        Comment targetComment = getById(targetCommentId);
+        CommentValidationHelper.validateNotDeleted(targetComment);
+        ActionValidationHelper.validateCanLike(targetComment);
 
-        actingUser.getLikedComments().add(comment);
-        comment.getLikedByUsers().add(actingUser);
+        actingUser.getLikedComments().add(targetComment);
+        targetComment.getLikedByUsers().add(actingUser);
 
         userRepository.save(actingUser);
 
         notificationService.send(
-                actingUser,
-                comment.getAuthor(),
-                commentId,
+                targetComment.getAuthor(),
+                targetCommentId,
                 "COMMENT",
                 "LIKE"
         );
@@ -167,15 +167,16 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public void unlikeComment(Long commentId, User actingUser) {
-        AuthorizationHelper.validateNotBlocked(actingUser);
+    public void unlikeComment(Long targetCommentId) {
+        User actingUser = SecurityContextUtil.getCurrentUser();
+        AuthorizationHelper.validateNotBlocked();
 
-        Comment comment = getById(commentId);
-        CommentValidationHelper.validateNotDeleted(comment);
-        ActionValidationHelper.validateCanUnlike(actingUser, comment);
+        Comment targetComment = getById(targetCommentId);
+        CommentValidationHelper.validateNotDeleted(targetComment);
+        ActionValidationHelper.validateCanUnlike(targetComment);
 
-        actingUser.getLikedComments().remove(comment);
-        comment.getLikedByUsers().remove(actingUser);
+        actingUser.getLikedComments().remove(targetComment);
+        targetComment.getLikedByUsers().remove(actingUser);
 
         userRepository.save(actingUser);
     }

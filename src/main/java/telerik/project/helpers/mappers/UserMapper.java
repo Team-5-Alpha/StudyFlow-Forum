@@ -2,7 +2,6 @@ package telerik.project.helpers.mappers;
 
 import org.springframework.stereotype.Component;
 import telerik.project.models.User;
-import telerik.project.models.dtos.create.UserCreateDTO;
 import telerik.project.models.dtos.response.AdminResponseDTO;
 import telerik.project.models.dtos.response.AdminUserResponseDTO;
 import telerik.project.models.dtos.response.UserResponseDTO;
@@ -12,16 +11,6 @@ import telerik.project.models.dtos.update.UserUpdateDTO;
 
 @Component
 public class UserMapper {
-
-    public User fromCreateDTO(UserCreateDTO dto) {
-        User user = new User();
-        user.setUsername(dto.getUsername());
-        user.setFirstName(dto.getFirstName());
-        user.setLastName(dto.getLastName());
-        user.setEmail(dto.getEmail());
-        user.setPassword(dto.getPassword());
-        return user;
-    }
 
     public void updateUser(User user, UserUpdateDTO dto) {
         fillBaseUpdate(dto, user);
@@ -49,6 +38,7 @@ public class UserMapper {
         AdminUserResponseDTO dto = new AdminUserResponseDTO();
         fillBaseResponse(dto, user);
         dto.setBlocked(user.getIsBlocked());
+        dto.setRole(user.getRole().name());
         return dto;
     }
 

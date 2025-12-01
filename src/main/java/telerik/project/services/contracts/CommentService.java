@@ -10,19 +10,19 @@ public interface CommentService {
 
     List<Comment> getAll(CommentFilterOptions filterOptions);
 
-    Comment getById(Long id);
+    Comment getById(Long targetCommentId);
 
-    void create(Comment comment, Long postId, User author);
+    void create(Comment comment, Long targetPostId);
 
-    void update(Long id, Comment updatedComment, User actingUser);
+    void update(Long targetCommentId, Comment updatedComment);
 
-    void delete(Long id, User actingUser);
+    void delete(Long targetCommentId);
 
-    void likeComment(Long commentId, User user);
+    void likeComment(Long targetCommentId);
 
-    void unlikeComment(Long commentId, User user);
+    void unlikeComment(Long targetCommentId);
 
     List<Comment> getReplies(Long parentCommentId);
 
-    long countByPostId(Long postId);
+    long countByPostId(Long targetPostId);
 }

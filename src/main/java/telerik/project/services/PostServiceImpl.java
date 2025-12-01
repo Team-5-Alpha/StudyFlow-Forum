@@ -17,6 +17,7 @@ import telerik.project.models.filters.PostFilterOptions;
 import telerik.project.repositories.PostRepository;
 import telerik.project.repositories.UserRepository;
 import telerik.project.repositories.specifications.PostSpecifications;
+import telerik.project.security.auth.SecurityContextUtil;
 import telerik.project.services.contracts.NotificationService;
 import telerik.project.services.contracts.PostService;
 import telerik.project.services.contracts.TagService;
@@ -63,9 +64,9 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
-    public Post getById(Long id) {
-        Post post = postRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Post", id));
+    public Post getById(Long targetPostId) {
+        Post post = postRepository.findById(targetPostId)
+                .orElseThrow(() -> new EntityNotFoundException("Post", targetPostId));
 
         PostValidationHelper.validateNotDeleted(post);
         return post;
@@ -73,28 +74,19 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public Post create(PostCreateDTO dto, User author) {
-        AuthorizationHelper.validateNotBlocked(author);
+    public Post create(PostCreateDTO dto) {
+        User actingUser = SecurityContextUtil.getCurrentUser();
+        AuthorizationHelper.validateNotBlocked();
 
         Post post = new Post();
-        post.setAuthor(author);
+        post.setAuthor(actingUser);
         post.setTitle(dto.getTitle());
         post.setContent(dto.getContent());
 
-        if (dto.getTags() != null) {
-            Set<Tag> resolved = dto.getTags().stream()
-                    .map(NormalizationUtils::normalizeTagName)
-                    .map(tagService::createIfNotExists)
-                    .collect(Collectors.toSet());
-
-            post.setTags(resolved);
-        }
-
         postRepository.save(post);
 
-        author.getFollowers().forEach(follower ->
+        actingUser.getFollowers().forEach(follower ->
                 notificationService.send(
-                        author,
                         follower,
                         post.getId(),
                         "POST",
@@ -107,12 +99,12 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public void update(Long postId, PostUpdateDTO dto, User actingUser) {
-        AuthorizationHelper.validateNotBlocked(actingUser);
+    public void update(Long targetPostId, PostUpdateDTO dto) {
+        AuthorizationHelper.validateNotBlocked();
 
-        Post existing = getById(postId);
+        Post existing = getById(targetPostId);
         PostValidationHelper.validateNotDeleted(existing);
-        AuthorizationHelper.validateOwner(actingUser, existing.getAuthor());
+        AuthorizationHelper.validateOwner(existing.getAuthor());
 
         if (dto.getTitle() != null && !dto.getTitle().isBlank()) {
             existing.setTitle(dto.getTitle());
@@ -136,21 +128,20 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public void delete(Long postId, User actingUser) {
-        AuthorizationHelper.validateNotBlocked(actingUser);
+    public void delete(Long targetPostId) {
+        AuthorizationHelper.validateNotBlocked();
 
-        Post post = getById(postId);
+        Post post = getById(targetPostId);
         PostValidationHelper.validateNotDeleted(post);
-        AuthorizationHelper.validateOwnerOrAdmin(actingUser, post.getAuthor());
+        AuthorizationHelper.validateOwnerOrAdmin(post.getAuthor());
 
         post.setIsDeleted(true);
         postRepository.save(post);
 
-        if (actingUser.isAdmin()) {
+        if (SecurityContextUtil.getCurrentUser().isAdmin()) {
             notificationService.send(
-                    actingUser,
                     post.getAuthor(),
-                    postId,
+                    targetPostId,
                     "POST",
                     "DELETED"
             );
@@ -159,12 +150,13 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public void likePost(Long postId, User actingUser) {
-        AuthorizationHelper.validateNotBlocked(actingUser);
+    public void likePost(Long targetPostId) {
+        User actingUser = SecurityContextUtil.getCurrentUser();
+        AuthorizationHelper.validateNotBlocked();
 
-        Post post = getById(postId);
+        Post post = getById(targetPostId);
         PostValidationHelper.validateNotDeleted(post);
-        ActionValidationHelper.validateCanLike(actingUser, post);
+        ActionValidationHelper.validateCanLike(post);
 
         actingUser.getLikedPosts().add(post);
         post.getLikedByUsers().add(actingUser);
@@ -172,9 +164,8 @@ public class PostServiceImpl implements PostService {
         userRepository.save(actingUser);
 
         notificationService.send(
-                actingUser,
                 post.getAuthor(),
-                postId,
+                targetPostId,
                 "POST",
                 "LIKE"
         );
@@ -182,12 +173,13 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional
-    public void unlikePost(Long postId, User actingUser) {
-        AuthorizationHelper.validateNotBlocked(actingUser);
+    public void unlikePost(Long targetPostId) {
+        User actingUser = SecurityContextUtil.getCurrentUser();
+        AuthorizationHelper.validateNotBlocked();
 
-        Post post = getById(postId);
+        Post post = getById(targetPostId);
         PostValidationHelper.validateNotDeleted(post);
-        ActionValidationHelper.validateCanUnlike(actingUser, post);
+        ActionValidationHelper.validateCanUnlike(post);
 
         actingUser.getLikedPosts().remove(post);
         post.getLikedByUsers().remove(actingUser);
@@ -197,26 +189,15 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
-    public long countByAuthor(Long authorId) {
-        return postRepository.countByAuthor_Id(authorId);
+    public long countByAuthor(Long targetUserId) {
+        return postRepository.countByAuthor_Id(targetUserId);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Post> getByAuthorId(Long authorId) {
-        return postRepository.findByAuthor_Id(authorId).stream()
+    public List<Post> getByAuthorId(Long targetUserId) {
+        return postRepository.findByAuthor_Id(targetUserId).stream()
                 .filter(p -> !p.isDeleted())
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Post> getMostRecent() {
-        return postRepository.findAll(
-                        Sort.by(Sort.Direction.DESC, "createdAt")
-                ).stream()
-                .filter(p -> !p.isDeleted())
-                .limit(10)
                 .toList();
     }
 
@@ -232,18 +213,8 @@ public class PostServiceImpl implements PostService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Post> getByTags(List<String> tags) {
-        return tags.stream()
-                .flatMap(t -> postRepository.findByTags_Name(t).stream())
-                .filter(p -> !p.isDeleted())
-                .distinct()
-                .toList();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Post> getLikedPosts(Long userId) {
-        return postRepository.findByLikedByUsers_Id(userId)
+    public List<Post> getLikedPosts(Long targetUserId) {
+        return postRepository.findByLikedByUsers_Id(targetUserId)
                 .stream()
                 .filter(p -> !p.isDeleted())
                 .toList();
