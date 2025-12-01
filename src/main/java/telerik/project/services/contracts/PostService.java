@@ -11,27 +11,23 @@ import java.util.List;
 public interface PostService {
     List<Post> getAll(PostFilterOptions filterOptions);
 
-    Post getById(Long id);
+    Post getById(Long targetPostId);
 
-    Post create(PostCreateDTO dto, User author);
+    Post create(PostCreateDTO dto);
 
-    void update(Long id, PostUpdateDTO dto, User actingUser);
+    void update(Long targetPostId, PostUpdateDTO dto);
 
-    void delete(Long id, User actingUser);
+    void delete(Long targetPostId);
 
-    void likePost(Long postId, User user);
+    void likePost(Long targetPostId);
 
-    void unlikePost(Long postId, User user);
+    void unlikePost(Long targetPostId);
 
-    long countByAuthor(Long authorId);
+    long countByAuthor(Long targetUserId);
 
-    List<Post> getByAuthorId(Long authorId);
+    List<Post> getByAuthorId(Long targetUserId);
 
     List<Post> getMostCommented();
 
-    List<Post> getMostRecent();
-
-    List<Post> getByTags(List<String> tags);
-
-    List<Post> getLikedPosts(Long userId);
+    List<Post> getLikedPosts(Long targetUserId);
 }

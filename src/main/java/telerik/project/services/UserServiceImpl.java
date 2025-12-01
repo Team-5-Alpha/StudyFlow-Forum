@@ -1,6 +1,8 @@
 package telerik.project.services;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import telerik.project.exceptions.EntityNotFoundException;
@@ -13,6 +15,7 @@ import telerik.project.models.User;
 import telerik.project.models.filters.UserFilterOptions;
 import telerik.project.repositories.UserRepository;
 import telerik.project.repositories.specifications.UserSpecifications;
+import telerik.project.security.auth.SecurityContextUtil;
 import telerik.project.services.contracts.NotificationService;
 import telerik.project.services.contracts.PostService;
 import telerik.project.services.contracts.UserService;
@@ -22,21 +25,13 @@ import telerik.project.utils.PaginationUtils;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PostService postService;
     private final NotificationService notificationService;
-
-    public UserServiceImpl(
-            UserRepository userRepository,
-            PostService postService,
-            NotificationService notificationService
-    ) {
-        this.userRepository = userRepository;
-        this.postService = postService;
-        this.notificationService = notificationService;
-    }
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional(readOnly = true)
@@ -54,9 +49,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(readOnly = true)
-    public User getById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("User", id));
+    public User getById(Long targetUserId) {
+        return userRepository.findById(targetUserId)
+                .orElseThrow(() -> new EntityNotFoundException("User", targetUserId));
     }
 
     @Override
@@ -76,67 +71,65 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void create(User user) {
-        String normalizedEmail = NormalizationUtils.normalizationEmail(user.getEmail());
-        String normalizedUsername = NormalizationUtils.normalizationUsername(user.getUsername());
+        String normalizedEmail = NormalizationUtils.normalizeEmail(user.getEmail());
+        String normalizedUsername = NormalizationUtils.normalizeUsername(user.getUsername());
 
         UserValidationHelper.validateUsernameNotTaken(userRepository, normalizedUsername);
         UserValidationHelper.validateEmailNotTaken(userRepository, normalizedEmail);
 
         user.setEmail(normalizedEmail);
         user.setUsername(normalizedUsername);
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        // Todo: security phase - encode password
         userRepository.save(user);
     }
 
     @Override
     @Transactional
-    public void update(Long userId, User updatedUser, User actingUser) {
-        AuthorizationHelper.validateNotBlocked(actingUser);
+    public void update(Long targetUserId, User updatedUser) {
+        AuthorizationHelper.validateNotBlocked();
 
-        User existing = getById(userId);
-        AuthorizationHelper.validateOwner(actingUser, existing);
+        User targetUser = getById(targetUserId);
+        AuthorizationHelper.validateOwner(targetUser);
 
-        String normalizedEmail = NormalizationUtils.normalizationEmail(updatedUser.getEmail());
-        UserValidationHelper.validateEmailAvailable(userRepository, normalizedEmail, existing.getEmail());
+        String normalizedEmail = NormalizationUtils.normalizeEmail(updatedUser.getEmail());
+        UserValidationHelper.validateEmailAvailable(userRepository, normalizedEmail, targetUser.getEmail());
 
-        existing.setFirstName(updatedUser.getFirstName());
-        existing.setLastName(updatedUser.getLastName());
-        existing.setEmail(normalizedEmail);
+        targetUser.setFirstName(updatedUser.getFirstName());
+        targetUser.setLastName(updatedUser.getLastName());
+        targetUser.setEmail(normalizedEmail);
+        targetUser.setProfilePhotoURL(updatedUser.getProfilePhotoURL());
+        targetUser.setPassword(passwordEncoder.encode(updatedUser.getPassword()));
 
-        if (existing.isAdmin()) {
-            existing.setPhoneNumber(updatedUser.getPhoneNumber());
+        if (targetUser.isAdmin()) {
+            targetUser.setPhoneNumber(updatedUser.getPhoneNumber());
         }
 
-        existing.setPassword(updatedUser.getPassword()); //Todo: Security change later
-        existing.setProfilePhotoURL(updatedUser.getProfilePhotoURL());
-
-        userRepository.save(existing);
+        userRepository.save(targetUser);
     }
 
     @Override
     @Transactional
-    public void delete(Long targetUserId, User actingUser) {
+    public void delete(Long targetUserId) {
         User user = getById(targetUserId);
-        AuthorizationHelper.validateOwnerOrAdmin(actingUser, user);
+        AuthorizationHelper.validateOwnerOrAdmin(user);
         userRepository.delete(user);
     }
 
     @Override
     @Transactional
-    public void blockUser(Long targetUserId, User actingUser) {
-        AuthorizationHelper.validateAdmin(actingUser);
-        AuthorizationHelper.validateSelfOperationNotAllowed(actingUser, targetUserId);
+    public void blockUser(Long targetUserId) {
+        AuthorizationHelper.validateAdmin();
+        AuthorizationHelper.validateSelfOperationNotAllowed(targetUserId);
 
-        User target = getById(targetUserId);
-        ActionValidationHelper.validateCanBlock(target);
+        User targetUser = getById(targetUserId);
+        ActionValidationHelper.validateCanBlock(targetUser);
 
-        target.setIsBlocked(true);
-        userRepository.save(target);
+        targetUser.setIsBlocked(true);
+        userRepository.save(targetUser);
 
         notificationService.send(
-                actingUser,
-                target,
+                targetUser,
                 targetUserId,
                 "USER",
                 "BLOCK"
@@ -145,9 +138,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void unblockUser(Long targetUserId, User actingUser) {
-        AuthorizationHelper.validateAdmin(actingUser);
-        AuthorizationHelper.validateSelfOperationNotAllowed(actingUser, targetUserId);
+    public void unblockUser(Long targetUserId) {
+        AuthorizationHelper.validateAdmin();
+        AuthorizationHelper.validateSelfOperationNotAllowed(targetUserId);
 
         User target = getById(targetUserId);
         ActionValidationHelper.validateCanUnblock(target);
@@ -156,7 +149,6 @@ public class UserServiceImpl implements UserService {
         userRepository.save(target);
 
         notificationService.send(
-                actingUser,
                 target,
                 targetUserId,
                 "USER",
@@ -166,9 +158,9 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void promoteToAdmin(Long targetUserId, User actingUser) {
-        AuthorizationHelper.validateAdmin(actingUser);
-        AuthorizationHelper.validateSelfOperationNotAllowed(actingUser, targetUserId);
+    public void promoteToAdmin(Long targetUserId) {
+        AuthorizationHelper.validateAdmin();
+        AuthorizationHelper.validateSelfOperationNotAllowed(targetUserId);
 
         User target = getById(targetUserId);
         ActionValidationHelper.validateCanPromote(target);
@@ -177,7 +169,6 @@ public class UserServiceImpl implements UserService {
         userRepository.save(target);
 
         notificationService.send(
-                actingUser,
                 target,
                 targetUserId,
                 "ADMIN",
@@ -187,24 +178,24 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public List<Post> getPostsByUser(Long userId) {
-        return postService.getByAuthorId(userId);
+    public List<Post> getPostsByUser(Long targetUserId) {
+        return postService.getByAuthorId(targetUserId);
     }
 
     @Override
     @Transactional
-    public void followUser(Long targetUserId, User actingUser) {
-        AuthorizationHelper.validateNotBlocked(actingUser);
-        AuthorizationHelper.validateSelfOperationNotAllowed(actingUser, targetUserId);
+    public void followUser(Long targetUserId) {
+        AuthorizationHelper.validateNotBlocked();
+        AuthorizationHelper.validateSelfOperationNotAllowed(targetUserId);
 
         User target = getById(targetUserId);
-        ActionValidationHelper.validateCanFollow(actingUser, target);
+        ActionValidationHelper.validateCanFollow(target);
 
+        User actingUser = SecurityContextUtil.getCurrentUser();
         actingUser.getFollowing().add(target);
         userRepository.save(actingUser);
 
         notificationService.send(
-                actingUser,
                 target,
                 targetUserId,
                 "USER",
@@ -214,38 +205,39 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void unfollowUser(Long targetUserId, User actingUser) {
-        AuthorizationHelper.validateNotBlocked(actingUser);
-        AuthorizationHelper.validateSelfOperationNotAllowed(actingUser, targetUserId);
+    public void unfollowUser(Long targetUserId) {
+        AuthorizationHelper.validateNotBlocked();
+        AuthorizationHelper.validateSelfOperationNotAllowed(targetUserId);
 
         User target = getById(targetUserId);
-        ActionValidationHelper.validateCanUnfollow(actingUser, target);
+        ActionValidationHelper.validateCanUnfollow(target);
 
+        User actingUser = SecurityContextUtil.getCurrentUser();
         actingUser.getFollowing().remove(target);
         userRepository.save(actingUser);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<User> getFollowers(Long userId) {
-        return List.copyOf(getById(userId).getFollowers());
+    public List<User> getFollowers(Long targetUserId) {
+        return List.copyOf(getById(targetUserId).getFollowers());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<User> getFollowing(Long userId) {
-        return List.copyOf(getById(userId).getFollowing());
+    public List<User> getFollowing(Long targetUserId) {
+        return List.copyOf(getById(targetUserId).getFollowing());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public long countFollowers(Long userId) {
-        return getById(userId).getFollowers().size();
+    public long countFollowers(Long targetUserId) {
+        return getById(targetUserId).getFollowers().size();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public long countFollowing(Long userId) {
-        return getById(userId).getFollowing().size();
+    public long countFollowing(Long targetUserId) {
+        return getById(targetUserId).getFollowing().size();
     }
 }

@@ -3,12 +3,12 @@ package telerik.project.controllers.rest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import telerik.project.helpers.mappers.CommentMapper;
 import telerik.project.helpers.mappers.PostMapper;
 import telerik.project.models.Comment;
 import telerik.project.models.Post;
-import telerik.project.models.User;
 import telerik.project.models.dtos.create.CommentCreateDTO;
 import telerik.project.models.dtos.create.PostCreateDTO;
 import telerik.project.models.dtos.response.CommentResponseDTO;
@@ -18,7 +18,6 @@ import telerik.project.models.filters.CommentFilterOptions;
 import telerik.project.models.filters.PostFilterOptions;
 import telerik.project.services.contracts.CommentService;
 import telerik.project.services.contracts.PostService;
-import telerik.project.services.contracts.UserService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,12 +27,34 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostRestController {
 
-    private final UserService userService;
     private final PostService postService;
     private final CommentService commentService;
     private final PostMapper postMapper;
     private final CommentMapper commentMapper;
 
+    @PreAuthorize("permitAll()")
+    @GetMapping("/latest")
+    public List<PostResponseDTO> getLatest() {
+        PostFilterOptions filterOptions = new PostFilterOptions(
+                null, null, null, null, false,
+                "createdAt", "desc", 0, 10
+        );
+
+        return postService.getAll(filterOptions).stream()
+                .map(postMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @PreAuthorize("permitAll()")
+    @GetMapping("/top-commented")
+    public List<PostResponseDTO> getTopCommented() {
+        return postService.getMostCommented().stream()
+                .limit(10)
+                .map(postMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
     public List<PostResponseDTO> getAll(
             @RequestParam(required = false) String title,
@@ -55,27 +76,21 @@ public class PostRestController {
                 .collect(Collectors.toList());
     }
 
-    @GetMapping("/{id}")
-    public PostResponseDTO getById(@PathVariable Long id) {
-        return postMapper.toResponse(postService.getById(id));
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping("/{targetPostId}")
+    public PostResponseDTO getById(@PathVariable Long targetPostId) {
+        return postMapper.toResponse(postService.getById(targetPostId));
     }
 
-    @GetMapping("/latest")
-    public List<PostResponseDTO> getLatest(@RequestParam(defaultValue = "10") int limit) {
-        return postService.getMostRecent().stream()
-                .limit(limit)
-                .map(postMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    @GetMapping("/{postId}/comments")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping("/{targetPostId}/comments")
     public List<CommentResponseDTO> getComments(
-            @PathVariable Long postId,
+            @PathVariable Long targetPostId,
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "10") Integer size) {
 
         CommentFilterOptions filterOptions = new CommentFilterOptions(
-                postId, null, null,
+                targetPostId, null, null,
                 null, null, null, page, size);
 
         return commentService.getAll(filterOptions).stream()
@@ -83,81 +98,55 @@ public class PostRestController {
                 .collect(Collectors.toList());
     }
 
-    @GetMapping("/top-commented")
-    public List<PostResponseDTO> getTopCommented(@RequestParam(defaultValue = "10") int limit) {
-        return postService.getMostCommented().stream()
-                .limit(limit)
-                .map(postMapper::toResponse)
-                .collect(Collectors.toList());
-    }
-
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public PostResponseDTO create(
-            @RequestHeader("X-User-Id") Long actingUserId,
-            @Valid @RequestBody PostCreateDTO dto
-    ) {
-        User actingUser = userService.getById(actingUserId);
-
-        Post post = postService.create(dto, actingUser);
+    public PostResponseDTO create(@Valid @RequestBody PostCreateDTO dto) {
+        Post post = postService.create(dto);
 
         return postMapper.toResponse(post);
     }
 
-    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PutMapping("/{targetPostId}")
     public PostResponseDTO update(
-            @RequestHeader("X-User-Id") Long actingUserId,
-            @PathVariable Long id,
+            @PathVariable Long targetPostId,
             @Valid @RequestBody PostUpdateDTO dto
     ) {
-        User actingUser = userService.getById(actingUserId);
-
-        postService.update(id, dto, actingUser);
-
-        return postMapper.toResponse(postService.getById(id));
+        postService.update(targetPostId, dto);
+        return postMapper.toResponse(postService.getById(targetPostId));
     }
 
-    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @DeleteMapping("/{targetPostId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
-            @RequestHeader("X-User-Id") Long actingUserId,
-            @PathVariable Long id
-    ) {
-        User actingUser = userService.getById(actingUserId);
-        postService.delete(id, actingUser);
+    public void delete(@PathVariable Long targetPostId) {
+        postService.delete(targetPostId);
     }
 
-    @PostMapping("/{id}/likes")
-    public void like(
-            @RequestHeader("X-User-Id") Long actingUserId,
-            @PathVariable Long id
-    ) {
-        User actingUser = userService.getById(actingUserId);
-        postService.likePost(id, actingUser);
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PostMapping("/{targetPostId}/likes")
+    public void like(@PathVariable Long targetPostId) {
+        postService.likePost(targetPostId);
     }
 
-    @DeleteMapping("/{id}/likes")
-    public void unlike(
-            @RequestHeader("X-User-Id") Long actingUserId,
-            @PathVariable Long id
-    ) {
-        User actingUser = userService.getById(actingUserId);
-        postService.unlikePost(id, actingUser);
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @DeleteMapping("/{targetPostId}/likes")
+    public void unlike(@PathVariable Long targetPostId) {
+        postService.unlikePost(targetPostId);
     }
 
-    @PostMapping("/{id}/comments")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PostMapping("/{targetPostId}/comments")
     @ResponseStatus(HttpStatus.CREATED)
     public CommentResponseDTO comment(
-            @RequestHeader("X-User-Id") Long actingUserId,
-            @PathVariable Long id,
+            @PathVariable Long targetPostId,
             @Valid @RequestBody CommentCreateDTO dto
-            ) {
-        User actingUser = userService.getById(actingUserId);
-
+    ) {
         Comment comment = new Comment();
         comment.setContent(dto.getContent());
 
-        commentService.create(comment, id, actingUser);
+        commentService.create(comment, targetPostId);
 
         return commentMapper.toResponse(comment);
     }

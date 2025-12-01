@@ -21,6 +21,4 @@ public class PostCreateDTO {
     @NotBlank(message = ValidationMessages.POST_CONTENT_NOT_NULL_ERROR)
     @Size(min = 32, max = 8192, message = ValidationMessages.POST_CONTENT_LENGTH_ERROR)
     private String content;
-
-    private Set<String> tags;
 }

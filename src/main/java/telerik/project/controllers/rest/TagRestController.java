@@ -3,14 +3,13 @@ package telerik.project.controllers.rest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import telerik.project.helpers.mappers.TagMapper;
 import telerik.project.models.Tag;
-import telerik.project.models.User;
 import telerik.project.models.dtos.response.TagResponseDTO;
 import telerik.project.models.dtos.update.TagUpdateDTO;
 import telerik.project.services.contracts.TagService;
-import telerik.project.services.contracts.UserService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,8 +21,8 @@ public class TagRestController {
 
     private final TagService tagService;
     private final TagMapper tagMapper;
-    private final UserService userService;
 
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
     public List<TagResponseDTO> getAllTags() {
         return tagService.getAll().stream()
@@ -31,11 +30,13 @@ public class TagRestController {
                 .collect(Collectors.toList());
     }
 
-    @GetMapping("/{id}")
-    public TagResponseDTO getTagById(@PathVariable Long id) {
-        return tagMapper.toResponse(tagService.getById(id));
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping("/{targetTagId}")
+    public TagResponseDTO getTagById(@PathVariable Long targetTagId) {
+        return tagMapper.toResponse(tagService.getById(targetTagId));
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public TagResponseDTO createTag(@Valid @RequestBody Tag tag) {
@@ -43,28 +44,24 @@ public class TagRestController {
         return tagMapper.toResponse(created);
     }
 
-    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PutMapping("/{targetTagId}")
     public TagResponseDTO update(
-            @RequestHeader("X-User-Id") Long actingUserId,
-            @PathVariable Long id,
+            @PathVariable Long targetTagId,
             @Valid @RequestBody TagUpdateDTO dto
     ) {
-        User actingUser = userService.getById(actingUserId);
-        Tag updated = tagService.getById(id);
+        Tag updatedTag = tagService.getById(targetTagId);
 
-        tagMapper.updateTag(updated, dto);
-        tagService.update(id, updated, actingUser);
+        tagMapper.updateTag(updatedTag, dto);
+        tagService.update(targetTagId, updatedTag);
 
-        return tagMapper.toResponse(tagService.getById(id));
+        return tagMapper.toResponse(tagService.getById(targetTagId));
     }
 
-    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @DeleteMapping("/{targetTagId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteTag(
-            @RequestHeader("X-User-Id") Long actingUserId,
-            @PathVariable Long id
-    ) {
-        User actingUser = userService.getById(actingUserId);
-        tagService.delete(id, actingUser);
+    public void deleteTag(@PathVariable Long targetTagId) {
+        tagService.delete(targetTagId);
     }
 }

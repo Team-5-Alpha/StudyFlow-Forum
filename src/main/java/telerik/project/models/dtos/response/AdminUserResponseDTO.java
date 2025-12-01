@@ -9,4 +9,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class AdminUserResponseDTO extends UserResponseDTO{
     private boolean isBlocked;
+    private String role;
 }

@@ -3,16 +3,15 @@ package telerik.project.controllers.rest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import telerik.project.helpers.mappers.CommentMapper;
 import telerik.project.models.Comment;
-import telerik.project.models.User;
 import telerik.project.models.dtos.create.CommentCreateDTO;
 import telerik.project.models.dtos.response.CommentResponseDTO;
 import telerik.project.models.dtos.update.CommentUpdateDTO;
 import telerik.project.models.filters.CommentFilterOptions;
 import telerik.project.services.contracts.CommentService;
-import telerik.project.services.contracts.UserService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,8 +23,8 @@ public class CommentRestController {
 
     private final CommentService commentService;
     private final CommentMapper commentMapper;
-    private final UserService userService;
 
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     @GetMapping
     public List<CommentResponseDTO> getAll(
             @RequestParam(required = false) Long postId,
@@ -46,77 +45,68 @@ public class CommentRestController {
                 .collect(Collectors.toList());
     }
 
-    @GetMapping("/{id}")
-    public CommentResponseDTO getById(@PathVariable Long id) {
-        return commentMapper.toResponse(commentService.getById(id));
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping("/{targetCommentId}")
+    public CommentResponseDTO getById(@PathVariable Long targetCommentId) {
+        return commentMapper.toResponse(commentService.getById(targetCommentId));
     }
 
-    @GetMapping("/{id}/replies")
-    public List<CommentResponseDTO> getReplies(@PathVariable Long id) {
-        return commentService.getReplies(id).stream()
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @GetMapping("/{targetCommentId}/replies")
+    public List<CommentResponseDTO> getReplies(@PathVariable Long targetCommentId) {
+        return commentService.getReplies(targetCommentId).stream()
                 .map(commentMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    @PostMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PostMapping("/{targetCommentId}")
     @ResponseStatus(HttpStatus.CREATED)
     public CommentResponseDTO create(
-            @RequestHeader("X-User-Id") Long actingUserId,
-            @PathVariable Long id,
+            @PathVariable Long targetCommentId,
             @Valid @RequestBody CommentCreateDTO dto
     ) {
-        User actingUser = userService.getById(actingUserId);
-        Comment parent = commentService.getById(id);
+        Comment parent = commentService.getById(targetCommentId);
 
         Comment reply = new Comment();
         reply.setContent(dto.getContent());
         reply.setParentComment(parent);
 
-        commentService.create(reply, parent.getPost().getId(), actingUser);
+        commentService.create(reply, parent.getPost().getId());
 
         return commentMapper.toResponse(reply);
     }
 
-    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PutMapping("/{targetCommentId}")
     public CommentResponseDTO update(
-            @RequestHeader("X-User-Id") Long actingUserId,
-            @PathVariable Long id,
+            @PathVariable Long targetCommentId,
             @Valid @RequestBody CommentUpdateDTO dto
     ) {
-        User actingUser = userService.getById(actingUserId);
-        Comment target = commentService.getById(id);
+        Comment updatedComment = commentService.getById(targetCommentId);
 
-        commentMapper.updateComment(target, dto);
-        commentService.update(id, target, actingUser);
+        commentMapper.updateComment(updatedComment, dto);
+        commentService.update(targetCommentId, updatedComment);
 
-        return commentMapper.toResponse(commentService.getById(id));
+        return commentMapper.toResponse(commentService.getById(targetCommentId));
     }
 
-    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @DeleteMapping("/{targetCommentId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
-            @RequestHeader("X-User-Id") Long actingUserId,
-            @PathVariable Long id
-    ) {
-        User actingUser = userService.getById(actingUserId);
-        commentService.delete(id, actingUser);
+    public void delete(@PathVariable Long targetCommentId) {
+        commentService.delete(targetCommentId);
     }
 
-    @PostMapping("/{id}/likes")
-    public void like(
-            @RequestHeader("X-User-Id") Long actingUserId,
-            @PathVariable Long id
-    ) {
-        User actingUser = userService.getById(actingUserId);
-        commentService.likeComment(id, actingUser);
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PostMapping("/{targetCommentId}/likes")
+    public void like(@PathVariable Long targetCommentId) {
+        commentService.likeComment(targetCommentId);
     }
 
-    @DeleteMapping("/{id}/likes")
-    public void unlike(
-            @RequestHeader("X-User-Id") Long actingUserId,
-            @PathVariable Long id
-    ) {
-        User actingUser = userService.getById(actingUserId);
-        commentService.unlikeComment(id, actingUser);
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @DeleteMapping("/{targetCommentId}/likes")
+    public void unlike(@PathVariable Long targetCommentId) {
+        commentService.unlikeComment(targetCommentId);
     }
 }
