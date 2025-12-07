@@ -15,4 +15,6 @@ public class CommentCreateDTO {
     @NotBlank(message = ValidationMessages.COMMENT_CONTENT_NOT_NULL_ERROR)
     @Size(min = 4, max = 4096, message = ValidationMessages.COMMENT_CONTENT_LENGTH_ERROR)
     private String content;
+
+    private Long parentCommentId;
 }

@@ -5,12 +5,14 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import telerik.project.models.dtos.ValidationMessages;
 
 @Getter
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class RegisterRequestDTO {
     @NotBlank(message = ValidationMessages.USERNAME_NOT_NULL_ERROR)
     @Size(min = 4, max = 32, message = ValidationMessages.USERNAME_LENGTH_ERROR)

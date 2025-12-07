@@ -7,8 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import telerik.project.models.dtos.ValidationMessages;
 
-import java.util.Set;
-
 @Getter
 @Setter
 @NoArgsConstructor

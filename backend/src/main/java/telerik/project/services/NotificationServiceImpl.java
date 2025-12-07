@@ -29,7 +29,10 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public List<Notification> getAll(NotificationFilterOptions filterOptions) {
-        AuthorizationHelper.validateNotBlocked();
+        Long currentUserId = SecurityContextUtil.getCurrentUserId();
+        AuthorizationHelper.validateNotBlocked(
+                buildActingUserPlaceholder(currentUserId)
+        );
 
         Pageable pageable = PaginationUtils.createPageable(
                 filterOptions.getPage(),
@@ -38,7 +41,7 @@ public class NotificationServiceImpl implements NotificationService {
         );
 
         Specification<Notification> recipientSpec = (root, query, cb) ->
-                cb.equal(root.get("recipient").get("id"), SecurityContextUtil.getCurrentUser().getId());
+                cb.equal(root.get("recipient").get("id"), currentUserId);
 
         Specification<Notification> combined =
                 recipientSpec.and(NotificationSpecifications.withFilters(filterOptions));
@@ -49,35 +52,22 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public Notification getById(Long targetNotificationId) {
-        AuthorizationHelper.validateNotBlocked();
-
-        Notification notification = notificationRepository.findById(targetNotificationId)
+        return notificationRepository.findById(targetNotificationId)
                 .orElseThrow(() -> new EntityNotFoundException("Notification", targetNotificationId));
-
-        AuthorizationHelper.validateOwner(notification.getRecipient());
-
-        return notification;
     }
 
     @Override
     @Transactional
     public void delete(Long targetNotificationId) {
-        AuthorizationHelper.validateNotBlocked();
-
         Notification notification = getById(targetNotificationId);
-
         notificationRepository.delete(notification);
     }
 
     @Override
     @Transactional
     public void markAsRead(Long targetNotificationId) {
-        AuthorizationHelper.validateNotBlocked();
-
         Notification targetNotification = getById(targetNotificationId);
-
         NotificationValidationHelper.validateNotAlreadyRead(targetNotification);
-
         targetNotification.setIsRead(true);
         notificationRepository.save(targetNotification);
     }
@@ -85,10 +75,9 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional
     public void markAllAsRead() {
-        AuthorizationHelper.validateNotBlocked();
-
+        Long currentUserId = SecurityContextUtil.getCurrentUserId();
         List<Notification> notifications =
-                notificationRepository.findByRecipient_IdAndIsReadFalse(SecurityContextUtil.getCurrentUser().getId());
+                notificationRepository.findByRecipient_IdAndIsReadFalse(currentUserId);
 
         notifications.forEach(n -> n.setIsRead(true));
         notificationRepository.saveAll(notifications);
@@ -96,8 +85,9 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
-    public void send(User recipient, Long entityId, String entityType, String actionType) {
+    public void send(User actor, User recipient, Long entityId, String entityType, String actionType) {
         Notification notification = NotificationFactory.create(
+                actor,
                 recipient,
                 entityId,
                 entityType,
@@ -105,5 +95,11 @@ public class NotificationServiceImpl implements NotificationService {
         );
 
         notificationRepository.save(notification);
+    }
+
+    private User buildActingUserPlaceholder(Long id) {
+        User user = new User();
+        user.setId(id);
+        return user;
     }
 }

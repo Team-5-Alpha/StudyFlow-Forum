@@ -1,7 +1,6 @@
 package telerik.project.services;
 
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import telerik.project.exceptions.EntityNotFoundException;
@@ -75,8 +74,8 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public Post create(PostCreateDTO dto) {
-        User actingUser = SecurityContextUtil.getCurrentUser();
-        AuthorizationHelper.validateNotBlocked();
+        User actingUser = getActingUser();
+        AuthorizationHelper.validateNotBlocked(actingUser);
 
         Post post = new Post();
         post.setAuthor(actingUser);
@@ -87,6 +86,7 @@ public class PostServiceImpl implements PostService {
 
         actingUser.getFollowers().forEach(follower ->
                 notificationService.send(
+                        actingUser,
                         follower,
                         post.getId(),
                         "POST",
@@ -100,11 +100,12 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public void update(Long targetPostId, PostUpdateDTO dto) {
-        AuthorizationHelper.validateNotBlocked();
+        User actingUser = getActingUser();
+        AuthorizationHelper.validateNotBlocked(actingUser);
 
         Post existing = getById(targetPostId);
         PostValidationHelper.validateNotDeleted(existing);
-        AuthorizationHelper.validateOwner(existing.getAuthor());
+        AuthorizationHelper.validateOwner(actingUser, existing.getAuthor());
 
         if (dto.getTitle() != null && !dto.getTitle().isBlank()) {
             existing.setTitle(dto.getTitle());
@@ -129,17 +130,19 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public void delete(Long targetPostId) {
-        AuthorizationHelper.validateNotBlocked();
+        User actingUser = getActingUser();
+        AuthorizationHelper.validateNotBlocked(actingUser);
 
         Post post = getById(targetPostId);
         PostValidationHelper.validateNotDeleted(post);
-        AuthorizationHelper.validateOwnerOrAdmin(post.getAuthor());
+        AuthorizationHelper.validateOwnerOrAdmin(actingUser, post.getAuthor());
 
         post.setIsDeleted(true);
         postRepository.save(post);
 
-        if (SecurityContextUtil.getCurrentUser().isAdmin()) {
+        if (actingUser.isAdmin()) {
             notificationService.send(
+                    actingUser,
                     post.getAuthor(),
                     targetPostId,
                     "POST",
@@ -151,12 +154,12 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public void likePost(Long targetPostId) {
-        User actingUser = SecurityContextUtil.getCurrentUser();
-        AuthorizationHelper.validateNotBlocked();
+        User actingUser = getActingUser();
+        AuthorizationHelper.validateNotBlocked(actingUser);
 
         Post post = getById(targetPostId);
         PostValidationHelper.validateNotDeleted(post);
-        ActionValidationHelper.validateCanLike(post);
+        ActionValidationHelper.validateCanLike(actingUser, post);
 
         actingUser.getLikedPosts().add(post);
         post.getLikedByUsers().add(actingUser);
@@ -164,6 +167,7 @@ public class PostServiceImpl implements PostService {
         userRepository.save(actingUser);
 
         notificationService.send(
+                actingUser,
                 post.getAuthor(),
                 targetPostId,
                 "POST",
@@ -174,12 +178,12 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional
     public void unlikePost(Long targetPostId) {
-        User actingUser = SecurityContextUtil.getCurrentUser();
-        AuthorizationHelper.validateNotBlocked();
+        User actingUser = getActingUser();
+        AuthorizationHelper.validateNotBlocked(actingUser);
 
         Post post = getById(targetPostId);
         PostValidationHelper.validateNotDeleted(post);
-        ActionValidationHelper.validateCanUnlike(post);
+        ActionValidationHelper.validateCanUnlike(actingUser, post);
 
         actingUser.getLikedPosts().remove(post);
         post.getLikedByUsers().remove(actingUser);
@@ -218,5 +222,16 @@ public class PostServiceImpl implements PostService {
                 .stream()
                 .filter(p -> !p.isDeleted())
                 .toList();
+    }
+
+    @Override
+    public long count() {
+        return postRepository.count();
+    }
+
+    private User getActingUser() {
+        Long id = SecurityContextUtil.getCurrentUserId();
+        return userRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("User", id));
     }
 }

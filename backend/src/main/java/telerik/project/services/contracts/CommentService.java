@@ -1,7 +1,6 @@
 package telerik.project.services.contracts;
 
 import telerik.project.models.Comment;
-import telerik.project.models.User;
 import telerik.project.models.filters.CommentFilterOptions;
 
 import java.util.List;

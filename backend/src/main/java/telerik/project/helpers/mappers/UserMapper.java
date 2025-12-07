@@ -13,24 +13,52 @@ import telerik.project.models.dtos.update.UserUpdateDTO;
 public class UserMapper {
 
     public void updateUser(User user, UserUpdateDTO dto) {
-        fillBaseUpdate(dto, user);
+        fillBaseUpdate(user, dto);
     }
 
     public void updateAdmin(User user, AdminUpdateDTO dto) {
-        fillBaseUpdate(dto, user);
-        user.setPhoneNumber(dto.getPhoneNumber());
+        fillBaseUpdate(user, dto);
+        if (dto.getPhoneNumber() != null && !dto.getPhoneNumber().isBlank()) {
+            user.setPhoneNumber(dto.getPhoneNumber());
+        }
     }
 
-    public UserSummaryDTO toSummary(User user) {
+    public UserSummaryDTO toSummary(User user, Long actingUserId) {
         UserSummaryDTO dto = new UserSummaryDTO();
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());
+        dto.setProfilePhotoUrl(user.getProfilePhotoURL());
+
+        boolean isFollowed = false;
+        if (actingUserId != null) {
+            isFollowed = user.getFollowers()
+                    .stream()
+                    .anyMatch(u -> u.getId().equals(actingUserId));
+        }
+
+        dto.setFollowedByMe(isFollowed);
+
         return dto;
     }
 
-    public UserResponseDTO toResponse(User user) {
+    public UserResponseDTO toResponse(User user, Long actingUserId) {
         UserResponseDTO dto = new UserResponseDTO();
         fillBaseResponse(dto, user);
+
+        dto.setPostsCount(user.getPosts().size());
+        dto.setFollowersCount(user.getFollowers().size());
+        dto.setFollowingCount(user.getFollowing().size());
+        dto.setBlocked(user.getIsBlocked());
+
+        boolean isFollowed = false;
+        if (actingUserId != null) {
+            isFollowed = user.getFollowers()
+                    .stream()
+                    .anyMatch(u -> u.getId().equals(actingUserId));
+        }
+        dto.setFollowedByMe(isFollowed);
+        dto.setRole(user.getRole().name());
+
         return dto;
     }
 
@@ -49,7 +77,8 @@ public class UserMapper {
         return dto;
     }
 
-    private void fillBaseUpdate(UserUpdateDTO dto, User user) {
+    private void fillBaseUpdate(User user, UserUpdateDTO dto) {
+
         if (dto.getFirstName() != null && !dto.getFirstName().isBlank()) {
             user.setFirstName(dto.getFirstName());
         }
@@ -62,13 +91,20 @@ public class UserMapper {
             user.setEmail(dto.getEmail());
         }
 
-        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
-            user.setPassword(dto.getPassword());
-        }
-
         if (dto.getProfilePhotoURL() != null && !dto.getProfilePhotoURL().isBlank()) {
             user.setProfilePhotoURL(dto.getProfilePhotoURL());
         }
+    }
+
+    public boolean changePassword(User user, UserUpdateDTO dto) {
+        boolean isPasswordChanged = false;
+
+        if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
+            user.setPassword(dto.getPassword());
+            isPasswordChanged = true;
+        }
+
+        return isPasswordChanged;
     }
 
     private void fillBaseResponse(UserResponseDTO dto, User user) {
@@ -77,7 +113,7 @@ public class UserMapper {
         dto.setFirstName(user.getFirstName());
         dto.setLastName(user.getLastName());
         dto.setEmail(user.getEmail());
-        dto.setProfilePhotoURL(user.getProfilePhotoURL());
+        dto.setProfilePhotoUrl(user.getProfilePhotoURL());
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());
     }

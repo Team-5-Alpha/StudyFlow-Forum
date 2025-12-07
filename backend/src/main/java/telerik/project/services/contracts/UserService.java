@@ -18,7 +18,7 @@ public interface UserService {
 
     void create(User user);
 
-    void update(Long targetUserId, User updatedUser);
+    void update(Long targetUserId, User updatedUser, boolean isPasswordChanged);
 
     void delete(Long targetUserId);
 
@@ -41,4 +41,6 @@ public interface UserService {
     long countFollowers(Long targetUserId);
 
     long countFollowing(Long targetUserId);
+
+    long count();
 }

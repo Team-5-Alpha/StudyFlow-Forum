@@ -59,12 +59,15 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<Post> posts = new HashSet<>();
 
+    @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<Comment> comments = new HashSet<>();
 
+    @EqualsAndHashCode.Exclude
     @ManyToMany( fetch = FetchType.LAZY)
     @JoinTable(
             name = "likes_posts",
@@ -73,6 +76,7 @@ public class User {
     )
     private Set<Post> likedPosts = new HashSet<>();
 
+    @EqualsAndHashCode.Exclude
     @ManyToMany( fetch = FetchType.LAZY)
     @JoinTable(
             name = "likes_comments",
@@ -81,9 +85,11 @@ public class User {
     )
     private Set<Comment> likedComments = new HashSet<>();
 
+    @EqualsAndHashCode.Exclude
     @ManyToMany(mappedBy = "following",  fetch = FetchType.LAZY)
     private Set<User> followers = new HashSet<>();
 
+    @EqualsAndHashCode.Exclude
     @ManyToMany( fetch = FetchType.LAZY)
     @JoinTable(
             name = "follows",
@@ -92,9 +98,11 @@ public class User {
     )
     private Set<User> following = new HashSet<>();
 
+    @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "actor", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Notification> sentNotifications = new HashSet<>();
 
+    @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "recipient", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Set<Notification> receivedNotifications = new HashSet<>();
 

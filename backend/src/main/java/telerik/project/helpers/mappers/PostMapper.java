@@ -12,18 +12,32 @@ public class PostMapper {
     private final TagMapper tagMapper;
 
     public PostResponseDTO toResponse(Post post) {
+        return toResponse(post, null);
+    }
+
+    public PostResponseDTO toResponse(Post post, Long actingUserId) {
         PostResponseDTO dto = new PostResponseDTO();
 
         dto.setId(post.getId());
         dto.setTitle(post.getTitle());
         dto.setContent(post.getContent());
-
         dto.setCreatedAt(post.getCreatedAt());
         dto.setUpdatedAt(post.getUpdatedAt());
 
-        dto.setAuthor(userMapper.toSummary(post.getAuthor()));
+        dto.setAuthor(userMapper.toSummary(post.getAuthor(), actingUserId));
+
         dto.setLikesCount(post.getLikedByUsers().size());
+
+        boolean liked = false;
+        if (actingUserId != null) {
+            liked = post.getLikedByUsers()
+                    .stream()
+                    .anyMatch(u -> u.getId().equals(actingUserId));
+        }
+        dto.setLikedByCurrentUser(liked);
+
         dto.setTags(tagMapper.toNameSet(post.getTags()));
+
         return dto;
     }
 }

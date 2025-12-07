@@ -20,7 +20,8 @@ public class CommentResponseDTO {
 
     private UserSummaryDTO author;
 
-    private Long parentCommentId;
+    private int likesCount;
 
-    private int likeCount;
+    private Long parentCommentId;
+    private boolean likedByCurrentUser;
 }

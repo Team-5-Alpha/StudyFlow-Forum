@@ -10,4 +10,6 @@ import lombok.Setter;
 public class UserSummaryDTO {
     private Long id;
     private String username;
+    private String profilePhotoUrl;
+    private boolean followedByMe;
 }

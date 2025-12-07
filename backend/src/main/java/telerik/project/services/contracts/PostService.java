@@ -1,7 +1,6 @@
 package telerik.project.services.contracts;
 
 import telerik.project.models.Post;
-import telerik.project.models.User;
 import telerik.project.models.dtos.create.PostCreateDTO;
 import telerik.project.models.dtos.update.PostUpdateDTO;
 import telerik.project.models.filters.PostFilterOptions;
@@ -30,4 +29,6 @@ public interface PostService {
     List<Post> getMostCommented();
 
     List<Post> getLikedPosts(Long targetUserId);
+
+    long count();
 }

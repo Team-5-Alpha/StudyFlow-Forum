@@ -10,14 +10,23 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 public class UserResponseDTO {
+
     private Long id;
 
     private String username;
     private String firstName;
     private String lastName;
-
     private String email;
-    private String profilePhotoURL;
+    private String profilePhotoUrl;
+
+    private String role;
+
+    private long postsCount;
+    private long followersCount;
+    private long followingCount;
+
+    private boolean followedByMe;
+    private boolean blocked;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

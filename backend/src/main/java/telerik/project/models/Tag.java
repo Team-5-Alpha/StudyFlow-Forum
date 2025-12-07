@@ -27,6 +27,7 @@ public class Tag {
     @Column(name = "name")
     private String name;
 
+    @EqualsAndHashCode.Exclude
     @ManyToMany(mappedBy = "tags", fetch = FetchType.LAZY)
     private Set<Post> posts = new HashSet<>();
 

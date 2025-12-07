@@ -49,6 +49,7 @@ public class Post {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Comment> comments = new ArrayList<>();
 
+    @EqualsAndHashCode.Exclude
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "post_tags",
@@ -57,6 +58,7 @@ public class Post {
     )
     private Set<Tag> tags = new HashSet<>();
 
+    @EqualsAndHashCode.Exclude
     @ManyToMany(mappedBy = "likedPosts", fetch = FetchType.LAZY)
     private Set<User> likedByUsers = new HashSet<>();
 
