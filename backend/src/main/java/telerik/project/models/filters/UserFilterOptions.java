@@ -1,7 +1,6 @@
 package telerik.project.models.filters;
 
 import lombok.Getter;
-import telerik.project.utils.PaginationUtils;
 
 import java.util.Optional;
 

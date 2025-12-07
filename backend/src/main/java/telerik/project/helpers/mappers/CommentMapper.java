@@ -17,6 +17,10 @@ public class CommentMapper {
     }
 
     public CommentResponseDTO toResponse(Comment comment) {
+        return toResponse(comment, null);
+    }
+
+    public CommentResponseDTO toResponse(Comment comment, Long actingUserId) {
         CommentResponseDTO dto = new CommentResponseDTO();
 
         dto.setId(comment.getId());
@@ -25,12 +29,25 @@ public class CommentMapper {
         dto.setCreatedAt(comment.getCreatedAt());
         dto.setUpdatedAt(comment.getUpdatedAt());
 
-        dto.setAuthor(userMapper.toSummary(comment.getAuthor()));
+        dto.setAuthor(userMapper.toSummary(comment.getAuthor(), actingUserId));
 
-        dto.setParentCommentId(comment.getParentComment() != null
-                ? comment.getParentComment().getId()
-                : null);
-        dto.setLikeCount(comment.getLikedByUsers().size());
+        if (comment.getParentComment() != null) {
+            dto.setParentCommentId(comment.getParentComment().getId());
+        }
+
+        dto.setLikesCount(comment.getLikedByUsers().size());
+
+        boolean liked = false;
+        if (actingUserId != null) {
+            liked = comment.getLikedByUsers()
+                    .stream()
+                    .anyMatch(u -> u.getId().equals(actingUserId));
+        }
+
+        dto.setLikedByCurrentUser(liked);
+
+        dto.setLikesCount(comment.getLikedByUsers().size());
+
         return dto;
     }
 }

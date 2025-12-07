@@ -1,0 +1,13 @@
+.single-post-conatiner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.comments-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}

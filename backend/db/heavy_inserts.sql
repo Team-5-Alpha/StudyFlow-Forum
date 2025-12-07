@@ -2,55 +2,111 @@ USE studyflow_forum;
 
 INSERT INTO users (first_name, last_name, username, email, password, role, phone_number, profile_photo_url)
 VALUES
-    ('Ivan', 'Petrov', 'ivanp', 'ivan@example.com', 'pass123', 'USER', '0888123456', NULL),
-    ('Maria', 'Georgieva', 'mgeorgieva', 'maria@example.com', 'pass123', 'USER', NULL, NULL),
-    ('Todor', 'Krushkov', 'krushkov', 'krushkov@example.com', 'pass123', 'ADMIN', '0888999000', NULL),
-    ('Nikolay', 'Dimitrov', 'niko_d', 'niko@example.com', 'pass123', 'USER', NULL, NULL),
-    ('Elena', 'Koleva', 'ekoleva', 'elena@example.com', 'pass123', 'USER', NULL, NULL),
+    ('Ivan', 'Petrov', 'ivanp', 'ivan@example.com', 'pass1234', 'USER', '0888123456', NULL),
+    ('Maria', 'Georgieva', 'mgeorgieva', 'maria@example.com', 'pass1234', 'USER', NULL, NULL),
+    ('Todor', 'Krushkov', 'krushkov', 'krushkov@example.com', 'pass1234', 'ADMIN', '0888999000', NULL),
+    ('Nikolay', 'Dimitrov', 'niko_d', 'niko@example.com', 'pass1234', 'USER', NULL, NULL),
+    ('Elena', 'Koleva', 'ekoleva', 'elena@example.com', 'pass1234', 'USER', NULL, NULL),
 
-    ('Petar','Stoyanov','p_stoy','petar@example.com','pass123','USER',NULL,NULL),
-    ('Kristina','Vasileva','kvas','kvas@example.com','pass123','USER',NULL,NULL),
-    ('Dimitar','Iliev','dido','dido@example.com','pass123','USER',NULL,NULL),
-    ('Aleks','Dobrev','adobrev','adobrev@example.com','pass123','USER',NULL,NULL),
-    ('Slavena','Nikolova','slavena_n','slavena@example.com','pass123','USER',NULL,NULL),
+    ('Petar','Stoyanov','p_stoy','petar@example.com','pass1234','USER',NULL,NULL),
+    ('Kristina','Vasileva','kvas','kvas@example.com','pass1234','USER',NULL,NULL),
+    ('Dimitar','Iliev','dido','dido@example.com','pass1234','USER',NULL,NULL),
+    ('Aleks','Dobrev','adobrev','adobrev@example.com','pass1234','USER',NULL,NULL),
+    ('Slavena','Nikolova','slavena_n','slavena@example.com','pass1234','USER',NULL,NULL),
 
-    ('Mihail','Krastev','misho_k','misho@example.com','pass123','USER',NULL,NULL),
-    ('Victoria','Marinova','vmarinova','viki@example.com','pass123','USER',NULL,NULL),
-    ('Rumen','Kolev','kolev_r','kolev_r@example.com','pass123','USER',NULL,NULL),
-    ('Stefan','Yordanov','stefan_y','stefan@example.com','pass123','USER',NULL,NULL),
-    ('Polina','Yaneva','polly_y','polina@example.com','pass123','USER',NULL,NULL),
+    ('Mihail','Krastev','misho_k','misho@example.com','pass1234','USER',NULL,NULL),
+    ('Victoria','Marinova','vmarinova','viki@example.com','pass1234','USER',NULL,NULL),
+    ('Rumen','Kolev','kolev_r','kolev_r@example.com','pass1234','USER',NULL,NULL),
+    ('Stefan','Yordanov','stefan_y','stefan@example.com','pass1234','USER',NULL,NULL),
+    ('Polina','Yaneva','polly_y','polina@example.com','pass1234','USER',NULL,NULL),
 
-    ('Asen','Hristov','ahristov','asen@example.com','pass123','USER',NULL,NULL),
-    ('Iliana','Todorova','ili_t','ili@example.com','pass123','USER',NULL,NULL),
-    ('Martin','Gochev','martin_g','gochev@example.com','pass123','USER',NULL,NULL),
-    ('Stela','Popova','stel4e','stela@example.com','pass123','USER',NULL,NULL),
-    ('Georgi','Valkov','gvv','gvalkov@example.com','pass123','USER',NULL,NULL);
+    ('Asencho','Hristov','ahristov','asen@example.com','pass1234','USER',NULL,NULL),
+    ('Iliana','Todorova','ili_t','ili@example.com','pass1234','USER',NULL,NULL),
+    ('Martin','Gochev','martin_g','gochev@example.com','pass1234','USER',NULL,NULL),
+    ('Stela','Popova','stel4e','stela@example.com','pass1234','USER',NULL,NULL),
+    ('Georgi','Valkov','gvv','gvalkov@example.com','pass1234','USER',NULL,NULL);
 
 INSERT INTO posts (title, content, author_id)
 VALUES
-    ('Understanding Java Streams in Depth', 'Long explanation about Java Streams...', 1),
-    ('How to Prepare for Telerik Java Exam', 'Study tips, resources, examples...', 3),
-    ('Why REST APIs Need Proper Validation', 'Detailed article about validations...', 2),
-    ('Spring Boot Pagination Explained', 'Guide about pageable, sorting...', 4),
-    ('Best Practices for Database Indexing', 'Important database tuning techniques...', 1),
+    ('Understanding Java Streams in Depth and Their Practical Use',
+     'Long explanation about Java Streams, covering intermediate operations, terminal operations, lazy evaluation and real-world patterns in modern applications...',
+     1),
 
-    ('Understanding JPA Fetch Types', 'Lazy vs eager loading explained...', 6),
-    ('Guide to Clean Architecture', 'Breaking dependency rules...', 7),
-    ('Spring Security for Beginners', 'Authentication, filters, chains...', 8),
-    ('How Threads Work in Java', 'Concurrency basics and examples...', 9),
-    ('Mastering Git Flow', 'Branching patterns and workflows...', 10),
+    ('How to Prepare for the Telerik Java Exam Like a Professional',
+     'Study tips, resources, examples and structured preparation strategies used by top-performing students, including patterns, pitfalls and memory tricks...',
+     3),
 
-    ('RESTful URL Design', 'Best practices for API paths...', 11),
-    ('Handling Exceptions in Spring', 'Controller advice patterns...', 12),
-    ('Writing Effective Unit Tests', 'JUnit, Mockito, Testcontainers...', 13),
-    ('SSH for Developers', 'Basics of secure connection...', 14),
-    ('Deploying Spring Boot Apps', 'Docker, CI/CD pipelines...', 15),
+    ('Why REST APIs Need Proper Validation for Stable Systems',
+     'Detailed article about validations, error handling conventions, security concerns and why validation layers save projects from absolute chaos...',
+     2),
 
-    ('Scaling Web Applications', 'Load balancing, caching...', 16),
-    ('Why You Should Use DTOs', 'Decoupling and validation...', 17),
-    ('Understanding SQL Joins', 'Examples of joins, indexes...', 18),
-    ('Microservices: Good or Bad?', 'Tradeoffs and complexity...', 19),
-    ('Java Collections Deep Dive', 'HashMap, TreeMap, List...', 20);
+    ('Spring Boot Pagination Explained in a Practical and Simple Way',
+     'Guide about pageable, sorting, slicing, limit-offset techniques and structuring data-heavy endpoints for optimal performance...',
+     4),
+
+    ('Best Practices for Database Indexing in High-Traffic Systems',
+     'Important database tuning techniques, covering index design, B-tree behavior, composite keys, and query optimization scenarios...',
+     1),
+
+    ('Understanding JPA Fetch Types with Real Examples and Caveats',
+     'Lazy vs eager loading explained with concrete cases, performance notes, N+1 problem illustrations and architectural recommendations...',
+     6),
+
+    ('Guide to Clean Architecture for Scalable Software Projects',
+     'Breaking dependency rules, organizing application layers and applying principles that make systems easier to test and maintain...',
+     7),
+
+    ('Spring Security for Beginners and Auth Flow Overview',
+     'Authentication, filters, chains, exceptions and realistic examples of securing different API endpoints in modern applications...',
+     8),
+
+    ('How Threads Work in Java and Why Concurrency Matters Today',
+     'Concurrency basics and examples, race conditions, thread safety, locking, executor services and real-world usage patterns...',
+     9),
+
+    ('Mastering Git Flow for Team Collaboration and Stability',
+     'Branching patterns and workflows, pull request discipline, versioning strategies and team development best practices...',
+     10),
+
+    ('RESTful URL Design and Why It Matters for Maintainable APIs',
+     'Best practices for API paths, resource modeling, verb avoidance, link clarity and long-term service stability considerations...',
+     11),
+
+    ('Handling Exceptions in Spring Using Controller Advice',
+     'Controller advice patterns, exception hierarchies, meaningful messages and improving debugging experience for developers...',
+     9),
+
+    ('Writing Effective Unit Tests with JUnit and Mockito',
+     'Techniques for improving code reliability, isolating dependencies and building maintainable test suites...',
+     13),
+
+    ('SSH for Developers and Secure Workflow Practices',
+     'Basics of secure connection, key management, tunneling and automation techniques used in DevOps...',
+     14),
+
+    ('Deploying Spring Boot Apps with Docker and CI/CD Pipelines',
+     'Docker strategies, pipeline steps, environment promotion, container optimization and deployment traps to avoid...',
+     15),
+
+    ('Scaling Web Apps Through Load Balancing and Caching',
+     'Load balancing, caching, horizontal scaling techniques, and architectural considerations for high availability systems...',
+     16),
+
+    ('Why You Should Use DTOs to Protect Your Application',
+     'Decoupling and validation strategies, transport boundaries, mapping challenges and maintainability improvements...',
+     17),
+
+    ('Understanding SQL Joins and Their Impact on Performance',
+     'Examples of joins, indexes, cardinality, execution plans and practical querying advice for developers...',
+     18),
+
+    ('Microservices: Good or Bad? Understanding the Tradeoffs',
+     'Tradeoffs and complexity, communication overhead, failure isolation, organizational impact and when monoliths are better...',
+     19),
+
+    ('Java Collections Deep Dive for Developers Who Want Control',
+     'HashMap, TreeMap, List structures, performance notes, internal implementation details and optimization best practices...',
+     20);
 
 INSERT INTO comments (content, author_id, post_id, parent_comment_id)
 VALUES

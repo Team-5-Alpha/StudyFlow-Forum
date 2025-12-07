@@ -1,0 +1,141 @@
+.admin-users-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admin-users-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-users-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 2fr) repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px 16px;
+}
+
+.admin-users-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.admin-users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-user-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.admin-user-row:hover {
+  transform: scale(1.01);
+  box-shadow: var(--white-shadow);
+}
+
+.admin-user-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-user-name {
+  font-weight: 700;
+}
+
+.admin-user-names,
+.admin-user-email {
+  color: var(--white-color);
+}
+
+.admin-user-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.admin-badge {
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--grey-color);
+  color: var(--white-color);
+  background: var(--grey-color);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.admin-badge-admin {
+  background: var(--accent-color);
+  color: var(--black-color);
+  border-color: var(--accent-color);
+}
+
+.admin-badge-active {
+  background: #1f8c3d;
+  border-color: #1f8c3d;
+}
+
+.admin-badge-blocked {
+  background: var(--red-color);
+  border-color: var(--red-color);
+}
+
+.admin-user-meta .admin-actions-container .red-btn {
+  width: auto;
+  padding: 8px 12px;
+}
+
+.admin-user-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--grey-color);
+  color: var(--white-color);
+  font-weight: 900;
+  font-size: 1.2rem;
+}
+
+.admin-user-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-user-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-searchbar {
+  grid-column: 1 / -1;
+}
+
+.admin-search-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 8px;
+}
+
+.admin-search-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}

@@ -49,9 +49,11 @@ public class Comment {
     @JoinColumn(name = "parent_comment_id")
     private Comment parentComment;
 
+    @EqualsAndHashCode.Exclude
     @ManyToMany(mappedBy = "likedComments", fetch = FetchType.LAZY)
     private Set<User> likedByUsers = new HashSet<>();
 
+    @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "parentComment", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<Comment> replies = new HashSet<>();
 

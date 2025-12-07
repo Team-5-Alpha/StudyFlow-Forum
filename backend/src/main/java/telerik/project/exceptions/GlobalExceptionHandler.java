@@ -1,69 +1,84 @@
 package telerik.project.exceptions;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import telerik.project.models.dtos.response.ResponseDTO;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
-@ControllerAdvice
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private String path(HttpServletRequest request) {
+        return request.getRequestURI();
+    }
+
     @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<?> handleNotFound(EntityNotFoundException ex) {
-        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    public ResponseEntity<ResponseDTO<?>> handleNotFound(
+            EntityNotFoundException ex,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ResponseDTO.error(ex.getMessage()));
     }
 
     @ExceptionHandler(EntityDuplicateException.class)
-    public ResponseEntity<?> handleDuplicate(EntityDuplicateException ex) {
-        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
-    }
-
-    @ExceptionHandler(AuthorizationException.class)
-    public ResponseEntity<?> handleAuthorization(AuthorizationException ex) {
-        return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage());
-    }
-
-    @ExceptionHandler(AuthenticationException.class)
-    public ResponseEntity<?> handleAuthentication(AuthenticationException ex) {
-        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    public ResponseEntity<ResponseDTO<?>> handleDuplicate(
+            EntityDuplicateException ex,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ResponseDTO.error(ex.getMessage()));
     }
 
     @ExceptionHandler(InvalidOperationException.class)
-    public ResponseEntity<?> handleInvalidOperation(InvalidOperationException ex) {
-        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    public ResponseEntity<ResponseDTO<?>> handleInvalidOperation(
+            InvalidOperationException ex,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ResponseDTO.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(AuthorizationException.class)
+    public ResponseEntity<ResponseDTO<?>> handleAuthorization(
+            AuthorizationException ex,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ResponseDTO.error(ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<?> handleValidation(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
+    public ResponseEntity<ResponseDTO<?>> handleValidation(
+            MethodArgumentNotValidException ex,
+            HttpServletRequest request
+    ) {
+        Map<String, String> fieldErrors = new HashMap<>();
 
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage())
+        for (FieldError err : ex.getBindingResult().getFieldErrors()) {
+            fieldErrors.put(err.getField(), err.getDefaultMessage());
+        }
+
+        return ResponseEntity.badRequest().body(
+                ResponseDTO.error("Validation failed.", fieldErrors)
         );
-
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(Map.of(
-                        "timestamp", LocalDateTime.now(),
-                        "status", HttpStatus.BAD_REQUEST.value(),
-                        "error", "Validation failed",
-                        "message", errors
-                ));
     }
 
-    private ResponseEntity<?> buildResponse(HttpStatus status, String message) {
-        return ResponseEntity
-                .status(status)
-                .body(Map.of(
-                        "timestamp", LocalDateTime.now(),
-                        "status", status.value(),
-                        "error", status.getReasonPhrase(),
-                        "message", message
-                ));
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ResponseDTO<?>> handleOther(
+            Exception ex,
+            HttpServletRequest request
+    ) {
+        ex.printStackTrace();
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ResponseDTO.error("Unexpected error occurred."));
     }
 }

@@ -8,7 +8,6 @@ public final class ValidationMessages {
     public final static String FIRST_NAME_LENGTH_ERROR = "First name must be between {min} and {max} symbols.";
     public final static String LAST_NAME_LENGTH_ERROR = "Last name must be between {min} and {max} symbols.";
     public final static String EMAIL_LENGTH_ERROR = "Email must be between {min} and {max} symbols.";
-    public final static String PHONE_NUMBER_LENGTH_ERROR = "Phone number must be between {min} and {max} symbols.";
     public final static String PASSWORD_LENGTH_ERROR = "Password must be between {min} and {max} symbols.";
 
     public final static String PROFILE_PHOTO_LENGTH_ERROR = "Profile photo URL can be max {max} symbols.";
@@ -22,7 +21,7 @@ public final class ValidationMessages {
     public final static String USERNAME_NOT_NULL_ERROR = "Username is required.";
     public final static String FIRST_NAME_NOT_NULL_ERROR = "First name is required.";
     public final static String LAST_NAME_NOT_NULL_ERROR = "Last name is required.";
-    public final static String EMAIL_NOT_NULL_ERROR = "Username is required.";
+    public final static String EMAIL_NOT_NULL_ERROR = "Email is required.";
     public final static String PASSWORD_NOT_NULL_ERROR = "Password is required.";
 
     public final static String EMAIL_INVALID_ERROR = "Email is invalid.";

@@ -3,14 +3,17 @@ package telerik.project.security.auth;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import telerik.project.exceptions.AuthorizationException;
+import telerik.project.exceptions.InvalidOperationException;
 import telerik.project.models.User;
-import telerik.project.security.jwt.JwtCookieUtil;
-import telerik.project.models.dtos.auth.AuthResponseDTO;
+import telerik.project.models.dtos.auth.AuthUserDTO;
 import telerik.project.models.dtos.auth.LoginRequestDTO;
 import telerik.project.models.dtos.auth.RegisterRequestDTO;
+import telerik.project.security.jwt.JwtCookieUtil;
 import telerik.project.security.jwt.JwtService;
 import telerik.project.services.contracts.UserService;
 
@@ -24,7 +27,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserService userService;
 
     @Override
-    public AuthResponseDTO register(RegisterRequestDTO request, HttpServletResponse response) {
+    public AuthUserDTO register(RegisterRequestDTO request, HttpServletResponse response) {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setFirstName(request.getFirstName());
@@ -34,50 +37,76 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         userService.create(user);
 
-        String jwt = jwtService.generateToken(new CustomUserDetails(user));
-        cookieUtil.addTokenCookie(response, jwt);
+        User created = userService.getByUsername(user.getUsername());
 
-        return new AuthResponseDTO("Registration successful.", user.getUsername(), user.getRole().name());
-    }
-
-    @Override
-    public AuthResponseDTO login(LoginRequestDTO request, HttpServletResponse response) {
-        var auth = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getIdentifier(),
-                        request.getPassword()
-                )
+        CustomUserDetails details = new CustomUserDetails(
+                created.getId(),
+                created.getUsername(),
+                created.getEmail(),
+                created.getPassword(),
+                created.getRole()
         );
 
-        CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
-
-        String jwt = jwtService.generateToken(principal);
+        String jwt = jwtService.generateToken(details);
         cookieUtil.addTokenCookie(response, jwt);
 
-        return new AuthResponseDTO(
-                "Login successful", principal.getUsername(), principal.getUser().getRole().name()
+        return new AuthUserDTO(
+                details.getId(),
+                details.getUsername(),
+                details.getRole().name()
         );
     }
 
     @Override
-    public AuthResponseDTO logout(HttpServletResponse response) {
-        cookieUtil.clearTokenCookie(response);
-        SecurityContextHolder.clearContext();
-        return new AuthResponseDTO("Logged out", null, "Anonymous");
-    }
+    public AuthUserDTO login(LoginRequestDTO request, HttpServletResponse response) {
 
-    @Override
-    public AuthResponseDTO getLoggedUser() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-
-        if (auth == null || !auth.isAuthenticated()) {
-            return new AuthResponseDTO("Not authenticated", null, "Anonymous");
+        if (request.getIdentifier() == null || request.getIdentifier().isBlank()
+                || request.getPassword() == null || request.getPassword().isBlank()) {
+            throw new InvalidOperationException("Username/email and password are required.");
         }
 
-        CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
+        try {
+            var auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getIdentifier(),
+                            request.getPassword()
+                    )
+            );
 
-        return new AuthResponseDTO(
-                "Authenticated", principal.getUsername(), principal.getUser().getRole().name()
+            CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
+
+            String jwt = jwtService.generateToken(principal);
+            cookieUtil.addTokenCookie(response, jwt);
+
+            return new AuthUserDTO(
+                    principal.getId(),
+                    principal.getUsername(),
+                    principal.getRole().name()
+            );
+
+        } catch (BadCredentialsException ex) {
+            throw new InvalidOperationException("Username/email or password are wrong.");
+        }
+    }
+
+    @Override
+    public void logout(HttpServletResponse response) {
+        cookieUtil.clearTokenCookie(response);
+        SecurityContextHolder.clearContext();
+    }
+
+    @Override
+    public AuthUserDTO getLoggedUser() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+
+        if (auth == null || auth.getPrincipal() == null || !(auth.getPrincipal() instanceof CustomUserDetails principal)) {
+            throw new AuthorizationException("Authentication required.");
+        }
+
+        return new AuthUserDTO(
+                principal.getId(),
+                principal.getUsername(),
+                principal.getRole().name()
         );
     }
 }

@@ -5,7 +5,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -17,11 +16,12 @@ public class PostResponseDTO {
     private String title;
     private String content;
 
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
     private UserSummaryDTO author;
 
     private int likesCount;
+    private boolean likedByCurrentUser;
     private Set<String> tags;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }
