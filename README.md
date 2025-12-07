@@ -1,4 +1,5 @@
 # StudyFlow Forum
+![StudyFlow Logo](assets/logo.png)
 
 Monorepo with a Spring Boot backend and React/Vite frontend for a forum platform featuring roles, posts, comments, notifications, and JWT-based authentication.
 
@@ -8,7 +9,7 @@ Monorepo with a Spring Boot backend and React/Vite frontend for a forum platform
 
 ## Database Schema
 - ER diagram:
-  - ![Database schema diagram](study-flow-er-diagram.png)
+  - ![Database schema diagram](assets/study-flow-er-diagram.png)
 
 ## Hosted Project
 - No public deployment at the moment. When run locally, the frontend is served at http://localhost:5173.
