@@ -1,0 +1,54 @@
+.follow-card {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  backdrop-filter: var(--light-filter);
+  padding: 10px;
+  border-radius: 20px;
+  box-shadow: var(--black-shadow);
+  transition: 0.15s ease-in-out;
+  cursor: pointer;
+}
+
+.follow-card:hover {
+  box-shadow: var(--white-shadow);
+  transform: scale(1.05);
+}
+
+.follow-card:active {
+  transform: scale(1);
+}
+
+.user-image {
+  display: flex;
+  align-self: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: var(--white-shadow);
+}
+
+.user-avatar {
+  background-color: var(--white-color);
+  color: var(--black-color);
+  display: flex;
+  font-size: 1.5rem;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  user-select: none;
+}
+
+.follow-row {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.username-link {
+  font-size: 1.5rem;
+  font-weight: 900;
+}
