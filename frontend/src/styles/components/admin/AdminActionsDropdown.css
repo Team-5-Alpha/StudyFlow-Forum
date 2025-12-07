@@ -1,0 +1,24 @@
+.admin-actions-container {
+  display: flex;
+  position: relative;
+  justify-content: center;
+}
+
+.red-btn {
+  width: 100%;
+  z-index: 2;
+}
+
+.admin-dropdown {
+  top: -10px;
+  position: absolute;
+  padding: 60px 10px 10px 10px;
+  background: var(--grey-color);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: var(--black-shadow);
+  z-index: 1;
+  width: 100%;
+}

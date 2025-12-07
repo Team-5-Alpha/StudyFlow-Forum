@@ -1,0 +1,45 @@
+.form-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 10px;
+  padding: 20px;
+  border-radius: var(--border-radius);
+  backdrop-filter: var(--light-filter);
+  box-shadow: var(--black-shadow);
+}
+
+.form-title {
+  margin: 0;
+  color: var(--accent-color);
+}
+
+.form-block {
+  background: var(--grey-color);
+  border-radius: var(--border-radius);
+  padding: 14px 16px;
+  box-shadow: var(--black-shadow);
+  transition: 0.15s ease-in-out;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-block .input-field {
+  background: var(--black-color);
+  border-color: var(--grey-color);
+  box-shadow: var(--black-shadow) inset;
+}
+
+.form-block .input-field:focus {
+  border-color: var(--accent-color);
+  box-shadow: var(--accent-shadow);
+}
+
+.post-form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
