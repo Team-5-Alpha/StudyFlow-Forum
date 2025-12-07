@@ -1,0 +1,40 @@
+.uc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.uc-modal {
+  background-color: var(--grey-color);
+  border-radius: var(--border-radius);
+  padding: 20px 40px;
+  max-width: 50%;
+  border: 1px solid var(--white-color);
+  width: 90%;
+  max-height: 50%;
+  overflow-y: auto;
+  box-shadow: var(--white-shadow);
+}
+
+.uc-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.uc-modal-header h2 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 900;
+}
+
+.uc-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}

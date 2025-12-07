@@ -1,0 +1,14 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  justify-content: space-between;
+  width: 100%;
+  flex-direction: column;
+}
+
+.content {
+  margin-top: 130px;
+  padding: 0;
+  width: 100%;
+  flex: 1 0 auto;
+}

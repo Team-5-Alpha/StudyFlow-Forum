@@ -1,0 +1,135 @@
+.comment-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: var(--border-radius);
+  backdrop-filter: var(--light-filter);
+  box-shadow: var(--black-shadow);
+  transition: 0.15s ease-in-out;
+  margin-bottom: 12px;
+}
+
+.comment-card:hover {
+  box-shadow: var(--white-shadow);
+  transform: scale(1.01);
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comment-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.comment-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--grey-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--white-color);
+  font-weight: 800;
+}
+
+.comment-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.comment-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.comment-author-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.comment-username {
+  font-weight: 700;
+  color: var(--accent-color);
+}
+
+.comment-date {
+  font-size: 0.85rem;
+  color: var(--white-color);
+  opacity: 0.8;
+}
+
+.comment-body {
+  color: var(--white-color);
+  width: 94%;
+}
+
+.comment-content {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.comment-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.comment-actions-left,
+.comment-actions-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.comment-reply-form {
+  margin-top: 8px;
+}
+
+.comment-reply-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comment-reply-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.comment-new {
+  justify-content: flex-end;
+}
+
+.comment-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.comment-edit-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.comments {
+  display: flex;
+  flex-direction: column;
+  width: 70%;
+}

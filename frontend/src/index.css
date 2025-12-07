@@ -1,0 +1,70 @@
+@import "./styles/components/common/FormControls.css";
+
+:root {
+  --accent-color: #ffd100 ;
+  --secondary-color: #ffee32;
+  
+  --white-color: #f5f5f5;
+  --grey-color: #333533;
+  --black-color: #202020;
+
+  --green-color: #78BA69;
+  --red-color: #CE4432;
+
+  --accent-shadow: 0 0 20px -5px #ffd100;
+  --white-shadow: 0 0 20px -5px #f5f5f5;
+  --black-shadow: 0 0 20px -5px #202020;
+
+  --border-radius: 30px;
+
+  --light-filter: blur(10px) brightness(130%);
+  --dark-filter: blur(10px) brightness(70%);
+
+  font-size: 16px;
+
+  color: var(--white-color);
+  background-color: var(--black-color);
+
+  font-family: "DM Sans", sans-serif;;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: var(--white-color);
+  text-decoration: inherit;
+  transition: 0.15s ease-in-out;
+}
+
+a:hover {
+  color: var(--accent-color);
+}
+
+html {
+  display: flex;
+  justify-content: center;
+  scroll-behavior: smooth;
+  width: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  width: 80%;
+}
+
+.main {
+  width: 100%;
+}
+
+h1 {
+  font-size: 3.2em;
+  font-weight: 900;
+  line-height: 1.1;
+}
